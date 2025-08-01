@@ -9,15 +9,30 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/tokyo-night-dark.min.css">
     <style>
         :root {
-            --bg-light: #f4f6f8; --text-light: #202124; --chat-bg-light: #ffffff;
-            --border-light: #e8e8e8; --accent-bg-light: #ffffff; --bg-dark: #1c1c1e;
-            --text-dark: #e8eaed; --chat-bg-dark: #2a2a2e; --border-dark: #3c4043;
-            --accent-bg-dark: #2f2f33; --accent: #1a73e8; --white: #ffffff; --gray: #8e8e93;
+            --bg-light: #f4f6f8; 
+            --text-light: #202124; 
+            --chat-bg-light: #ffffff;
+            --border-light: #e0e0e0;
+            /* FIX: Defined a distinct color for bot messages in light mode */
+            --bot-message-bg-light: #f0f4f9; 
+            
+            --bg-dark: #1c1c1e;
+            --text-dark: #e8eaed; 
+            --chat-bg-dark: #2a2a2e;
+            --border-dark: #3c4043; 
+            /* FIX: Slightly adjusted dark mode bot message color for better contrast */
+            --bot-message-bg-dark: #3a3f58;
+            
+            --accent: #1a73e8; 
+            --white: #ffffff; 
+            --gray: #8e8e93;
             --grad-accent: linear-gradient(135deg, #1a73e8 0%, #4285F4 40%, #9b72cb 75%, #d96570 90%, #f2a640 100%);
             --danger: #d93025;
         }
-        [data-theme="light"] { --bg: var(--bg-light); --text: var(--text-light); --chat-bg: var(--chat-bg-light); --border: var(--border-light); --accent-bg: var(--accent-bg-light); }
-        [data-theme="dark"] { --bg: var(--bg-dark); --text: var(--text-dark); --chat-bg: var(--chat-bg-dark); --border: var(--border-dark); --accent-bg: var(--accent-bg-dark); }
+        /* FIX: Correctly map the new bot message colors */
+        [data-theme="light"] { --bg: var(--bg-light); --text: var(--text-light); --chat-bg: var(--chat-bg-light); --border: var(--border-light); --bot-bg: var(--bot-message-bg-light); }
+        [data-theme="dark"] { --bg: var(--bg-dark); --text: var(--text-dark); --chat-bg: var(--chat-bg-dark); --border: var(--border-dark); --bot-bg: var(--bot-message-bg-dark); }
+        
         *, *::before, *::after { box-sizing: border-box; }
         html { height: -webkit-fill-available; }
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; overflow: hidden; }
@@ -43,7 +58,8 @@
         .user .content { background: var(--accent); color: var(--white); border-top-right-radius: 4px; }
         .user .avatar { background: #7f8c8d; }
         .bot { align-self: flex-start; align-items: flex-start; }
-        .bot .content { background: var(--accent-bg); border: 1px solid var(--border); border-top-left-radius: 4px; }
+        /* FIX: Apply the distinct bot message background color */
+        .bot .content { background: var(--bot-bg); border: 1px solid var(--border); border-top-left-radius: 4px; }
         .bot pre { background-color: #282c34; color: #abb2bf; padding: 1em; border-radius: 8px; overflow-x: auto; position: relative; }
         .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: var(--white); border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; opacity: 0; transition: opacity 0.2s; font-size: 0.8em; }
         pre:hover .copy-btn { opacity: 0.7; }
@@ -51,27 +67,74 @@
         #image-preview-container { position: relative; align-self: flex-start; margin: 0.5rem 1rem 0; display: none; }
         #image-preview { max-width: 80px; max-height: 80px; border-radius: 8px; border: 2px solid var(--border); }
         #remove-img-btn { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--chat-bg); cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1; }
-        .input-area { display: flex; padding: 1rem; gap: 0.75rem; align-items: center; }
-        #text-input { flex: 1; border: none; outline: none; padding: 10px 1rem; border-radius: 20px; resize: none; font-size: 1rem; background: var(--bg); color: var(--text); max-height: 120px; line-height: 1.5; }
-        .input-options { display: flex; gap: 1rem; align-items: center; padding: 0 0.5rem; font-size: 0.9rem; }
-        .deluxe-btn { background: var(--grad-accent); color: var(--white); border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease-out; flex-shrink: 0; }
+        
+        /* --- FIX: Complete Overhaul of the Input Area Layout --- */
+        .input-area { 
+            display: flex; 
+            padding: 0.75rem 1rem; 
+            gap: 0.75rem; 
+            align-items: flex-end; /* CRITICAL: Aligns all items to the bottom */
+        }
+        #text-input { 
+            flex: 1; 
+            border: none; 
+            outline: none; 
+            padding: 10px 16px; 
+            border-radius: 22px; 
+            resize: none; 
+            font-size: 1rem; 
+            background: var(--bg); 
+            color: var(--text); 
+            max-height: 150px; /* Set a max growth height */
+            line-height: 1.5;
+            -ms-overflow-style: none; /* for Internet Explorer, Edge */
+            scrollbar-width: none; /* for Firefox */
+        }
+        #text-input::-webkit-scrollbar {
+            display: none; /* for Chrome, Safari, and Opera */
+        }
+
+        .input-options { 
+            display: flex; 
+            gap: 0.5rem; 
+            align-items: center;
+            padding-bottom: 10px; /* Aligns with textarea text baseline */
+        }
+        .deluxe-btn { 
+            background: var(--grad-accent); 
+            color: var(--white); 
+            border: none; 
+            width: 44px; 
+            height: 44px; 
+            border-radius: 50%; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: transform 0.2s ease-out; 
+            flex-shrink: 0; 
+        }
         .deluxe-btn:hover { transform: scale(1.1); }
         .deluxe-btn svg { width: 20px; height: 20px; }
-        #send-btn svg { transform: translate(-1px, 1px); }
-        #menu-btn svg { transform: translateY(-1px); }
-        #settings-btn svg { transform: translateY(-1px); }
-        .text-btn { background: var(--accent-bg); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 500; }
-        .icon-btn { background: none; border: none; color: var(--text); cursor: pointer; opacity: 0.7; padding: 0.5rem; }
-        .icon-btn.delete-btn { color: var(--danger); opacity: 0.6; }
-        .icon-btn.delete-btn:hover { opacity: 1; }
+        /* Removed transform hacks, alignment is now handled by flexbox */
+
         #settings-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1001; backdrop-filter: blur(4px); }
         #settings-modal { background: var(--chat-bg); padding: 1.5rem; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem; }
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem; }
         .modal-section { margin-bottom: 1rem; }
-        .modal-section input[type="text"], .modal-section input[type="password"] {width:100%;padding:8px;margin-top:5px; border-radius:8px; background:var(--bg); color:var(--text); border: 1px solid var(--border);}
+        .modal-section label { font-weight: 500; font-size: 0.9rem; }
+        .modal-section input[type="text"], .modal-section input[type="password"], .modal-section select {width:100%;padding:10px;margin-top:6px; border-radius:8px; background:var(--bg); color:var(--text); border: 1px solid var(--border); font-size: 1rem;}
         .data-buttons { display: flex; gap: 1rem; justify-content: center; }
-        [data-theme="dark"] #model-select, [data-theme="dark"] #redeem-code { background-color: var(--accent-bg-dark); color: var(--text-dark); border: 1px solid var(--border-dark); }
         [data-theme="dark"] #web-search-toggle { accent-color: var(--accent); }
+        
+        /* FIX: Better spacing for the footer */
+        .developer-credit {
+            text-align:center; 
+            font-size:0.8em; 
+            color:var(--gray); 
+            margin-top: 1.5rem;
+        }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 375px) { .input-area { gap: 0.5rem; padding: 0.75rem; } .deluxe-btn { width: 40px; height: 40px; } .deluxe-btn svg { width: 18px; height: 18px; } }
     </style>
@@ -118,25 +181,25 @@
                 <h2>设置</h2>
                 <button id="close-settings-btn" class="icon-btn" style="font-size: 1.5rem;">×</button>
             </div>
-            <!-- FEATURE: Custom API Key -->
             <div class="modal-section">
                 <label for="api-key-input">自定义 API Key (可选):</label>
                 <input type="password" id="api-key-input" placeholder="粘贴你的 Gemini Key 以使用自己的额度">
             </div>
             <div class="modal-section">
                 <label for="model-select">选择模型:</label>
-                <select id="model-select" style="width:100%;padding:8px;margin-top:5px;border-radius:8px; background:var(--bg); color:var(--text); border: 1px solid var(--border);">
+                <select id="model-select">
                     <optgroup label="最新模型">
                         <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
-                        <option value="gemini-1.5-flash-latest" selected>Gemini 1.5 Flash (推荐)</option>
+                        <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
                     </optgroup>
-                    <optgroup label="旧版模型">
+                    <optgroup label="标准模型">
                         <option value="gemini-pro">Gemini 1.0 Pro</option>
                     </optgroup>
                 </select>
             </div>
             <div class="modal-section" style="display: flex; justify-content: space-between; align-items: center;">
-                <label>暗色模式</label>
+                <!-- FIX: Renamed to 深色模式 -->
+                <label>深色模式</label>
                 <button class="text-btn" id="theme-toggle">切换</button>
             </div>
             <div class="modal-section">
@@ -161,7 +224,8 @@
                 </div>
                  <p style="font-size:0.8em; color:var(--gray); text-align:center; margin-top:0.5rem;">备份您的对话和设置到本地文件。</p>
             </div>
-            <div style="text-align:center; font-size:0.8em; color:var(--gray); margin-top: 1rem;">
+            <!-- FIX: Applied a class for better spacing -->
+            <div class="developer-credit">
                 <p style="margin:0;">开发者</p>
                 <p style="margin:0.2rem 0;">太空人 & Gemini Pro</p>
             </div>

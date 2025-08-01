@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Gemini 聊天</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/tokyo-night-dark.min.css">
+    <style>
+        :root {
+            --bg-light: #f4f6f8; --text-light: #202124; --chat-bg-light: #ffffff;
+            --border-light: #e8e8e8; --accent-bg-light: #ffffff; --bg-dark: #1c1c1e;
+            --text-dark: #e8eaed; --chat-bg-dark: #2a2a2e; --border-dark: #3c4043;
+            --accent-bg-dark: #2f2f33; --accent: #1a73e8; --white: #ffffff; --gray: #8e8e93;
+            --grad-accent: linear-gradient(135deg, #1a73e8 0%, #4285F4 40%, #9b72cb 75%, #d96570 90%, #f2a640 100%);
+            --danger: #d93025;
+        }
+        [data-theme="light"] { --bg: var(--bg-light); --text: var(--text-light); --chat-bg: var(--chat-bg-light); --border: var(--border-light); --accent-bg: var(--accent-bg-light); }
+        [data-theme="dark"] { --bg: var(--bg-dark); --text: var(--text-dark); --chat-bg: var(--chat-bg-dark); --border: var(--border-dark); --accent-bg: var(--accent-bg-dark); }
+        *, *::before, *::after { box-sizing: border-box; }
+        html { height: -webkit-fill-available; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; overflow: hidden; }
+        .app-container { display: flex; height: 100%; position: relative; }
+        #sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: var(--chat-bg); border-right: 1px solid var(--border); transition: left 0.3s ease-in-out; z-index: 1002; display: flex; flex-direction: column; }
+        #sidebar.open { left: 0; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
+        .sidebar-header { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-header h3 { margin: 0; font-size: 1rem; }
+        .conversation-list { flex-grow: 1; overflow-y: auto; }
+        .conversation-item { padding: 0.8rem 1rem; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+        .conversation-item .title { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        [data-theme="light"] .conversation-item.active { background-color: #e8f0fe; }
+        [data-theme="dark"] .conversation-item.active { background-color: #3a3f58; }
+        .sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); }
+        .main-content { display: flex; flex-direction: column; width: 100%; height: 100%; }
+        .header { background: var(--chat-bg); padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; height: 60px; }
+        .header h1 { font-size: 1.1rem; font-weight: 600; margin: 0; text-align: center; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-container { flex: 1; overflow-y: auto; padding: 1rem; }
+        .message { display: flex; flex-direction: column; margin: 1.5rem 1rem; max-width: 90%; animation: fadeIn 0.5s; }
+        .message .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--grad-accent); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 500; flex-shrink: 0; margin-bottom: 0.5rem; }
+        .message .content { max-width: 100%; padding: 0.6rem 1rem; border-radius: 18px; position: relative; word-wrap: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .user { align-self: flex-end; align-items: flex-end; }
+        .user .content { background: var(--accent); color: var(--white); border-top-right-radius: 4px; }
+        .user .avatar { background: #7f8c8d; }
+        .bot { align-self: flex-start; align-items: flex-start; }
+        .bot .content { background: var(--accent-bg); border: 1px solid var(--border); border-top-left-radius: 4px; }
+        .bot pre { background-color: #282c34; color: #abb2bf; padding: 1em; border-radius: 8px; overflow-x: auto; position: relative; }
+        .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: var(--white); border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; opacity: 0; transition: opacity 0.2s; font-size: 0.8em; }
+        pre:hover .copy-btn { opacity: 0.7; }
+        .input-wrapper { display: flex; flex-direction: column; flex-shrink: 0; background: var(--chat-bg); border-top: 1px solid var(--border); }
+        #image-preview-container { position: relative; align-self: flex-start; margin: 0.5rem 1rem 0; display: none; }
+        #image-preview { max-width: 80px; max-height: 80px; border-radius: 8px; border: 2px solid var(--border); }
+        #remove-img-btn { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--chat-bg); cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1; }
+        .input-area { display: flex; padding: 1rem; gap: 0.75rem; align-items: center; }
+        #text-input { flex: 1; border: none; outline: none; padding: 10px 1rem; border-radius: 20px; resize: none; font-size: 1rem; background: var(--bg); color: var(--text); max-height: 120px; line-height: 1.5; }
+        .input-options { display: flex; gap: 1rem; align-items: center; padding: 0 0.5rem; font-size: 0.9rem; }
+        .deluxe-btn { background: var(--grad-accent); color: var(--white); border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease-out; flex-shrink: 0; }
+        .deluxe-btn:hover { transform: scale(1.1); }
+        .deluxe-btn svg { width: 20px; height: 20px; }
+        #send-btn svg { transform: translate(-1px, 1px); }
+        #menu-btn svg { transform: translateY(-1px); }
+        #settings-btn svg { transform: translateY(-1px); }
+        .text-btn { background: var(--accent-bg); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 500; }
+        .icon-btn { background: none; border: none; color: var(--text); cursor: pointer; opacity: 0.7; padding: 0.5rem; }
+        .icon-btn.delete-btn { color: var(--danger); opacity: 0.6; }
+        .icon-btn.delete-btn:hover { opacity: 1; }
+        #settings-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1001; backdrop-filter: blur(4px); }
+        #settings-modal { background: var(--chat-bg); padding: 1.5rem; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem; }
+        .modal-section { margin-bottom: 1rem; }
+        .data-buttons { display: flex; gap: 1rem; justify-content: center; }
+        [data-theme="dark"] #model-select, [data-theme="dark"] #redeem-code { background-color: var(--accent-bg-dark); color: var(--text-dark); border: 1px solid var(--border-dark); }
+        [data-theme="dark"] #web-search-toggle { accent-color: var(--accent); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 375px) { .input-area { gap: 0.5rem; padding: 0.75rem; } .deluxe-btn { width: 40px; height: 40px; } .deluxe-btn svg { width: 18px; height: 18px; } }
+    </style>
+</head>
+<body>
+<!-- HTML 结构与原版一致 -->
+<div class="app-container">
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <h3>对话列表</h3>
+            <button id="close-sidebar-btn" class="icon-btn" style="font-size:1.5rem;">×</button>
+        </div>
+        <div class="conversation-list" id="conversation-list"></div>
+        <div class="sidebar-footer">
+            <button id="add-conversation-btn" class="text-btn" style="width:100%; justify-content:center;">创建新对话</button>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <button id="menu-btn" class="deluxe-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+            <h1 id="header-title">新对话</h1>
+            <button id="settings-btn" class="deluxe-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+        </div>
+        <div class="chat-container" id="chat-container"></div>
+        <div class="input-wrapper">
+            <div id="image-preview-container">
+                <img id="image-preview" src="">
+                <button id="remove-img-btn">×</button>
+            </div>
+            <div class="input-area">
+                <button class="deluxe-btn" id="upload-btn" title="上传图片"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></button>
+                <textarea id="text-input" placeholder="输入消息..." rows="1"></textarea>
+                <div class="input-options">
+                    <input type="checkbox" id="web-search-toggle" title="联网搜索">
+                    <label for="web-search-toggle">联网</label>
+                </div>
+                <button class="deluxe-btn" id="send-btn" title="发送"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button>
+                <input type="file" id="image-input" accept="image/*" style="display: none;">
+            </div>
+        </div>
+    </div>
+    <div id="settings-overlay">
+        <div id="settings-modal">
+            <div class="modal-header">
+                <h2>设置</h2>
+                <button id="close-settings-btn" class="icon-btn" style="font-size: 1.5rem;">×</button>
+            </div>
+            <div class="modal-section">
+                <label for="model-select">选择模型:</label>
+                <select id="model-select" style="width:100%;padding:8px;margin-top:5px;border-radius:8px;">
+                     <optgroup label="最新模型">
+                        <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+                        <option value="gemini-1.5-flash-latest" selected>Gemini 1.5 Flash (推荐)</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="modal-section" style="display: flex; justify-content: space-between; align-items: center;">
+                <label>暗色模式</label>
+                <button class="text-btn" id="theme-toggle">切换</button>
+            </div>
+            <div class="modal-section">
+                <label for="redeem-code">兑换码:</label>
+                <input type="text" id="redeem-code" placeholder="输入兑换码" style="width:100%;padding:8px;margin-top:5px; border-radius:8px;">
+                <button id="redeem-btn" class="text-btn" style="width:100%;margin-top:0.5rem;justify-content:center;">兑换</button>
+            </div>
+            <div id="usage-info" class="modal-section" style="text-align: left;">
+                <p id="usage-count" style="margin: 0; font-weight: 500;">剩余次数: ...</p>
+                <p style="font-size:0.8em; color:var(--gray);">提示: 每个账户有3次初始试用机会。</p>
+            </div>
+            <div id="unlimited-info" class="modal-section" style="text-align: left; display: none;">
+                <p style="margin: 0; font-weight: 500; color: #34c759;">✓ 已解锁无限使用权限</p>
+            </div>
+             <hr style="border:none; border-top:1px solid var(--border); margin: 1.5rem 0;">
+            <div class="modal-section">
+                <label>数据管理:</label>
+                <div class="data-buttons">
+                    <button id="import-data-btn" class="text-btn">导入数据</button>
+                    <button id="export-data-btn" class="text-btn">导出数据</button>
+                    <input type="file" id="import-file-input" accept=".json" style="display:none;">
+                </div>
+                 <p style="font-size:0.8em; color:var(--gray); text-align:center; margin-top:0.5rem;">备份您的对话和设置到本地文件。</p>
+            </div>
+            <div style="text-align:center; font-size:0.8em; color:var(--gray); margin-top: 1rem;">
+                <p style="margin:0;">开发者</p>
+                <p style="margin:0.2rem 0;">太空人 & Gemini Pro</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 引入外部 JavaScript 文件 -->
+<script src="/main.js" defer></script>
+</body>
+</html>

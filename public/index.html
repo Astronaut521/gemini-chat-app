@@ -76,7 +76,6 @@
     </style>
 </head>
 <body>
-<!-- HTML 结构与原版一致 -->
 <div class="app-container">
     <div id="sidebar">
         <div class="sidebar-header">
@@ -121,9 +120,17 @@
             <div class="modal-section">
                 <label for="model-select">选择模型:</label>
                 <select id="model-select" style="width:100%;padding:8px;margin-top:5px;border-radius:8px;">
-                     <optgroup label="最新模型">
+                    <optgroup label="最新模型">
+                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    </optgroup>
+                    <optgroup label="标准模型">
                         <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
                         <option value="gemini-1.5-flash-latest" selected>Gemini 1.5 Flash (推荐)</option>
+                    </optgroup>
+                    <optgroup label="生成类模型 (非聊天)">
+                        <option value="imagen-4.0-generate-preview-06-06">Imagen 4 (文生图)</option>
+                        <option value="veo-3.0-generate-preview">Veo 3 (文生视频)</option>
                     </optgroup>
                 </select>
             </div>
@@ -160,7 +167,6 @@
         </div>
     </div>
 </div>
-<!-- 引入外部 JavaScript 文件 -->
 <script src="/main.js" defer></script>
 </body>
 </html>

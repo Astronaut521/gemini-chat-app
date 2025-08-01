@@ -1,8 +1,9 @@
 // --- 后端配置 ---
 const MAX_TRIAL_COUNT = 3;
-// FIX: Completed the full list of redeem codes
+// FIX: Using -1 to represent Infinity, as JSON does not support Infinity.
+const UNLIMITED_SENTINEL = -1; 
 const REDEEM_CODES = {
-    "GEMINI-FOR-ALL": Infinity,
+    "GEMINI-FOR-ALL": UNLIMITED_SENTINEL,
     'BLUE-GEM-A8C5': 5, 'BLUE-GEM-F2B9': 5, 'BLUE-GEM-7D4E': 5, 'BLUE-GEM-9C1A': 5, 'BLUE-GEM-3E8F': 5,
     'CYAN-ROCK-B6D2': 5, 'CYAN-ROCK-5A9E': 5, 'CYAN-ROCK-E3C7': 5, 'CYAN-ROCK-4F8B': 5, 'CYAN-ROCK-1D6A': 5,
     'NAVY-STAR-C9F4': 5, 'NAVY-STAR-8B2E': 5, 'NAVY-STAR-D7A1': 5, 'NAVY-STAR-2E5C': 5, 'NAVY-STAR-6B3F': 5,
@@ -21,7 +22,7 @@ export async function onRequest(context) {
     try {
         const url = new URL(context.request.url);
         const pathParts = url.pathname.split('/');
-        const apiEndpoint = pathParts.pop() || pathParts.pop(); // Handles trailing slashes
+        const apiEndpoint = pathParts.pop() || pathParts.pop();
         let response = await handleApiRequest(apiEndpoint, context);
         response.headers.set('Access-Control-Allow-Origin', '*');
         return response;
@@ -57,14 +58,13 @@ async function handleApiRequest(endpoint, context) {
 
 // --- API 处理函数 ---
 async function handleChat(request, env, userId, userState) {
-    // FEATURE: Use user's API key if available, otherwise fall back to server's key
     const apiKey = userState.apiKey || env.GEMINI_API_KEY;
     if (!apiKey) {
          return new Response(JSON.stringify({ error: '服务器未配置API Key，且用户未提供自定义Key。' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // Check for trial uses only if the user is using the server's key
-    if (!userState.apiKey && userState.trialCount !== Infinity && userState.trialCount <= 0) {
+    // FIX: Check against UNLIMITED_SENTINEL (-1)
+    if (!userState.apiKey && userState.trialCount !== UNLIMITED_SENTINEL && userState.trialCount <= 0) {
         return new Response(JSON.stringify({ error: '您的试用次数已用完！请输入兑换码或在设置中提供您自己的API Key。' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -89,8 +89,8 @@ async function handleChat(request, env, userId, userState) {
     }
     const responseData = await geminiResponse.json();
     
-    // Only deduct trial count if using the server's key
-    if (!userState.apiKey && userState.trialCount !== Infinity) {
+    // FIX: Check against UNLIMITED_SENTINEL (-1) before deducting
+    if (!userState.apiKey && userState.trialCount !== UNLIMITED_SENTINEL) {
         userState.trialCount--;
     }
 
@@ -130,17 +130,16 @@ async function handleConversations(request, env, userId, userState) {
     return new Response(JSON.stringify(userState), { headers: { 'Content-Type': 'application/json' } });
 }
 
-// FIX: handleSettings now also saves the custom API Key
 async function handleSettings(request, env, userId, userState) {
     const settings = await request.json();
     userState.theme = settings.theme ?? userState.theme;
     userState.model = settings.model ?? userState.model;
-    userState.apiKey = settings.apiKey ?? userState.apiKey; // Can be an empty string to unset
+    userState.apiKey = settings.apiKey ?? userState.apiKey; 
     await env.CHAT_DATA.put(userId, JSON.stringify(userState));
     return new Response(JSON.stringify({ success: true, newState: userState }), { headers: { 'Content-Type': 'application/json' } });
 }
 
-// FIX: Corrected redemption logic for all codes
+// FIX: Complete logic overhaul using UNLIMITED_SENTINEL (-1)
 async function handleRedeem(request, env, userId, userState) {
     const { code } = await request.json();
     const upperCaseCode = code.trim().toUpperCase();
@@ -148,14 +147,14 @@ async function handleRedeem(request, env, userId, userState) {
     if (!upperCaseCode) return new Response(JSON.stringify({ success: false, message: '兑换码不能为空。' }), { status: 400, headers });
     if (userState.redeemedCodes.includes(upperCaseCode)) return new Response(JSON.stringify({ success: false, message: '此兑换码已被当前账户使用。' }), { status: 400, headers });
     
-    if (REDEEM_CODES[upperCaseCode]) {
+    if (REDEEM_CODES[upperCaseCode] !== undefined) {
         const amount = REDEEM_CODES[upperCaseCode];
         let message;
-        if (amount === Infinity) {
-            userState.trialCount = Infinity;
+        if (amount === UNLIMITED_SENTINEL) {
+            userState.trialCount = UNLIMITED_SENTINEL;
             message = '兑换成功！您已解锁无限使用权限。';
         } else {
-            if (userState.trialCount === Infinity) {
+            if (userState.trialCount === UNLIMITED_SENTINEL) {
                 return new Response(JSON.stringify({ success: false, message: '您已是无限权限，无需增加次数。' }), { status: 400, headers });
             }
             userState.trialCount = (Number(userState.trialCount) || 0) + amount;
@@ -184,7 +183,7 @@ function getInitialUserState() {
     return {
         theme: 'light', model: 'gemini-1.5-flash-latest',
         trialCount: MAX_TRIAL_COUNT, redeemedCodes: [],
-        apiKey: null, // Add apiKey to the initial state
+        apiKey: null, 
         conversations: { [initialId]: { id: initialId, title: "新对话 1", history: [] } },
         activeConversationId: initialId
     };
@@ -200,4 +199,4 @@ async function getUserIdFromCookie(request) {
         responseHeaders['Set-Cookie'] = `userID=${userId}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`;
     }
     return { userId, responseHeaders };
-            }
+}

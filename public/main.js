@@ -2,17 +2,13 @@ const ui = {};
 let appState = {};
 let isLoading = false;
 let imageData = null;
-const UNLIMITED_SENTINEL = -1; // Make frontend aware of the new standard
+const UNLIMITED_SENTINEL = -1; 
 
 // --- 全局API请求函数 ---
 async function apiRequest(endpoint, options = {}) {
+    // ... (no changes in this function)
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    
-    const response = await fetch(`/api${path}`, {
-        ...options,
-        headers: { 'Content-Type': 'application/json', ...options.headers },
-    });
-
+    const response = await fetch(`/api${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: '请求失败，无法解析错误信息。' }));
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -22,6 +18,7 @@ async function apiRequest(endpoint, options = {}) {
 
 // --- 初始化与状态管理 ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // ... (no changes in this function)
     Object.assign(ui, {
         appContainer: document.querySelector('.app-container'), body: document.body, chatContainer: document.getElementById('chat-container'),
         textInput: document.getElementById('text-input'), sendBtn: document.getElementById('send-btn'),
@@ -50,6 +47,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadInitialState() {
     try {
         const state = await apiRequest('state');
+        // --- DATA REPAIR NOTIFICATION ---
+        if (state.repaired) {
+            alert("检测到您的账户数据存在异常，已为您重置使用次数。如有兑换码，请重新兑换。");
+        }
         updateAppState(state);
     } catch (error) {
         console.error("无法从服务器加载状态:", error);
@@ -58,8 +59,8 @@ async function loadInitialState() {
 }
 
 function updateAppState(newState) {
+    // ... (no changes in this function)
     appState = newState;
-    
     if (!appState.activeConversationId || !appState.conversations[appState.activeConversationId]) {
         createNewConversation(false);
     } else {
@@ -75,22 +76,20 @@ function updateAppState(newState) {
 function adjustHeight() { document.querySelector('.app-container').style.height = window.innerHeight + 'px'; }
 
 function setupEventListeners() {
+    // ... (no changes in this function)
     ui.sendBtn.addEventListener('click', sendMessage);
     ui.textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
     ui.addConversationBtn.addEventListener('click', () => createNewConversation(true));
     ui.settingsBtn.addEventListener('click', () => ui.settingsOverlay.style.display = 'flex');
     ui.closeSettingsBtn.addEventListener('click', () => {
-        // When closing settings, if the API key was changed, save it.
-        if (ui.apiKeyInput.value.trim() !== (appState.apiKey || '')) {
-            saveSettings();
-        }
+        if (ui.apiKeyInput.value.trim() !== (appState.apiKey || '')) { saveSettings(); }
         ui.settingsOverlay.style.display = 'none';
     });
     ui.menuBtn.addEventListener('click', () => ui.sidebar.classList.toggle('open'));
     ui.closeSidebarBtn.addEventListener('click', () => ui.sidebar.classList.remove('open'));
     ui.themeToggle.addEventListener('click', toggleTheme);
     ui.modelSelect.addEventListener('change', saveSettings);
-    ui.apiKeyInput.addEventListener('blur', saveSettings); // Save when user clicks away
+    ui.apiKeyInput.addEventListener('blur', saveSettings);
     ui.redeemBtn.addEventListener('click', redeemCode);
     ui.uploadBtn.addEventListener('click', () => ui.imageInput.click());
     ui.imageInput.addEventListener('change', handleImageUpload);
@@ -101,28 +100,18 @@ function setupEventListeners() {
 }
 
 async function saveSettings() {
+    // ... (no changes in this function)
     try {
         const apiKey = ui.apiKeyInput.value.trim();
-        // Prevent saving if it's the same as the current state
-        if (apiKey === (appState.apiKey || '') &&
-            ui.modelSelect.value === appState.model &&
-            ui.body.dataset.theme === appState.theme) {
-            return;
-        }
-
+        if (apiKey === (appState.apiKey || '') && ui.modelSelect.value === appState.model && ui.body.dataset.theme === appState.theme) { return; }
         const response = await apiRequest('settings', {
             method: 'POST',
-            body: JSON.stringify({
-                theme: ui.body.dataset.theme,
-                model: ui.modelSelect.value,
-                apiKey: apiKey,
-            })
+            body: JSON.stringify({ theme: ui.body.dataset.theme, model: ui.modelSelect.value, apiKey: apiKey })
         });
         updateAppState(response.newState);
         const originalColor = ui.apiKeyInput.style.borderColor;
         ui.apiKeyInput.style.borderColor = '#34c759';
         setTimeout(() => { ui.apiKeyInput.style.borderColor = originalColor; }, 2000);
-
     } catch (error) {
         alert(`设置保存失败: ${error.message}`);
         const originalColor = ui.apiKeyInput.style.borderColor;
@@ -132,18 +121,17 @@ async function saveSettings() {
 }
 
 async function toggleTheme() {
+    // ... (no changes in this function)
     ui.body.dataset.theme = ui.body.dataset.theme === 'dark' ? 'light' : 'dark';
     await saveSettings();
 }
 
 async function redeemCode() {
+    // ... (no changes in this function)
     const code = ui.redeemCodeInput.value.trim();
     if (!code) return;
     try {
-        const result = await apiRequest('redeem', {
-            method: 'POST',
-            body: JSON.stringify({ code })
-        });
+        const result = await apiRequest('redeem', { method: 'POST', body: JSON.stringify({ code }) });
         alert(result.message);
         if (result.success) {
             updateAppState(result.newState);
@@ -154,13 +142,12 @@ async function redeemCode() {
     }
 }
 
-// FIX: Complete logic overhaul using UNLIMITED_SENTINEL (-1)
 function updateUsageDisplay() { 
+    // ... (no changes in this function)
     if (appState.apiKey) {
         ui.usageInfo.style.display = 'none';
         ui.unlimitedInfo.style.display = 'block';
         ui.unlimitedInfo.querySelector('p').innerHTML = '✓ 使用您自己的 API Key';
-
     } else if (appState.trialCount === UNLIMITED_SENTINEL) {
         ui.usageInfo.style.display = 'none';
         ui.unlimitedInfo.style.display = 'block';
@@ -171,6 +158,8 @@ function updateUsageDisplay() {
         ui.usageCount.textContent = `剩余次数: ${appState.trialCount}`; 
     }
 }
+
+// --- The rest of the functions have no changes ---
 
 async function handleConversationAction(action, payload = {}) {
     try {

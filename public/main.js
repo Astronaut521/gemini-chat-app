@@ -6,7 +6,6 @@ const UNLIMITED_SENTINEL = -1;
 
 // --- 全局API请求函数 ---
 async function apiRequest(endpoint, options = {}) {
-    // ... (no changes in this function)
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const response = await fetch(`/api${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
     if (!response.ok) {
@@ -18,7 +17,6 @@ async function apiRequest(endpoint, options = {}) {
 
 // --- 初始化与状态管理 ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // ... (no changes in this function)
     Object.assign(ui, {
         appContainer: document.querySelector('.app-container'), body: document.body, chatContainer: document.getElementById('chat-container'),
         textInput: document.getElementById('text-input'), sendBtn: document.getElementById('send-btn'),
@@ -47,9 +45,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadInitialState() {
     try {
         const state = await apiRequest('state');
-        // --- DATA REPAIR NOTIFICATION ---
         if (state.repaired) {
-            alert("检测到您的账户数据存在异常，已为您重置使用次数。如有兑换码，请重新兑换。");
+            alert("检测到您的账户数据存在异常，已为您重置。如有兑换码，请重新兑换。");
         }
         updateAppState(state);
     } catch (error) {
@@ -59,7 +56,6 @@ async function loadInitialState() {
 }
 
 function updateAppState(newState) {
-    // ... (no changes in this function)
     appState = newState;
     if (!appState.activeConversationId || !appState.conversations[appState.activeConversationId]) {
         createNewConversation(false);
@@ -75,10 +71,18 @@ function updateAppState(newState) {
 
 function adjustHeight() { document.querySelector('.app-container').style.height = window.innerHeight + 'px'; }
 
+// FIX: Added auto-growing textarea logic
+function autoGrowTextarea() {
+    const textarea = ui.textInput;
+    textarea.style.height = 'auto'; // Reset height to recalculate
+    textarea.style.height = (textarea.scrollHeight) + 'px';
+}
+
 function setupEventListeners() {
-    // ... (no changes in this function)
     ui.sendBtn.addEventListener('click', sendMessage);
     ui.textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+    // FIX: Attach input event for auto-growing
+    ui.textInput.addEventListener('input', autoGrowTextarea);
     ui.addConversationBtn.addEventListener('click', () => createNewConversation(true));
     ui.settingsBtn.addEventListener('click', () => ui.settingsOverlay.style.display = 'flex');
     ui.closeSettingsBtn.addEventListener('click', () => {
@@ -100,7 +104,6 @@ function setupEventListeners() {
 }
 
 async function saveSettings() {
-    // ... (no changes in this function)
     try {
         const apiKey = ui.apiKeyInput.value.trim();
         if (apiKey === (appState.apiKey || '') && ui.modelSelect.value === appState.model && ui.body.dataset.theme === appState.theme) { return; }
@@ -121,13 +124,11 @@ async function saveSettings() {
 }
 
 async function toggleTheme() {
-    // ... (no changes in this function)
     ui.body.dataset.theme = ui.body.dataset.theme === 'dark' ? 'light' : 'dark';
     await saveSettings();
 }
 
 async function redeemCode() {
-    // ... (no changes in this function)
     const code = ui.redeemCodeInput.value.trim();
     if (!code) return;
     try {
@@ -143,7 +144,6 @@ async function redeemCode() {
 }
 
 function updateUsageDisplay() { 
-    // ... (no changes in this function)
     if (appState.apiKey) {
         ui.usageInfo.style.display = 'none';
         ui.unlimitedInfo.style.display = 'block';
@@ -159,8 +159,7 @@ function updateUsageDisplay() {
     }
 }
 
-// --- The rest of the functions have no changes ---
-
+// ... (The rest of the functions from here on have no changes)
 async function handleConversationAction(action, payload = {}) {
     try {
         const newState = await apiRequest('conversations', { method: 'POST', body: JSON.stringify({ action, ...payload }) });
@@ -289,7 +288,9 @@ async function sendMessage() {
     const currentConversation = appState.conversations[appState.activeConversationId];
     const historyToSend = [...currentConversation.history, userMessage];
 
-    ui.textInput.value = ''; removeImage();
+    ui.textInput.value = ''; 
+    autoGrowTextarea(); // Reset textarea height after sending
+    removeImage();
     const thinkingDiv = document.createElement('div');
     thinkingDiv.className = 'message bot';
     thinkingDiv.innerHTML = `<div class="avatar">G</div><div class="content">思考中...</div>`;

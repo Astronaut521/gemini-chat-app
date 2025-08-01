@@ -2,6 +2,7 @@ const ui = {};
 let appState = {};
 let isLoading = false;
 let imageData = null;
+const UNLIMITED_SENTINEL = -1; // Make frontend aware of the new standard
 
 // --- 全局API请求函数 ---
 async function apiRequest(endpoint, options = {}) {
@@ -37,7 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         usageInfo: document.getElementById('usage-info'), unlimitedInfo: document.getElementById('unlimited-info'),
         importDataBtn: document.getElementById('import-data-btn'), exportDataBtn: document.getElementById('export-data-btn'),
         importFileInput: document.getElementById('import-file-input'),
-        // FEATURE: Get the API Key input element
         apiKeyInput: document.getElementById('api-key-input'),
     });
     
@@ -65,7 +65,6 @@ function updateAppState(newState) {
     } else {
         ui.body.dataset.theme = appState.theme;
         ui.modelSelect.value = appState.model;
-        // FEATURE: Set the API key input value
         ui.apiKeyInput.value = appState.apiKey || '';
         updateUsageDisplay();
         renderConversation();
@@ -80,13 +79,18 @@ function setupEventListeners() {
     ui.textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
     ui.addConversationBtn.addEventListener('click', () => createNewConversation(true));
     ui.settingsBtn.addEventListener('click', () => ui.settingsOverlay.style.display = 'flex');
-    ui.closeSettingsBtn.addEventListener('click', () => ui.settingsOverlay.style.display = 'none');
+    ui.closeSettingsBtn.addEventListener('click', () => {
+        // When closing settings, if the API key was changed, save it.
+        if (ui.apiKeyInput.value.trim() !== (appState.apiKey || '')) {
+            saveSettings();
+        }
+        ui.settingsOverlay.style.display = 'none';
+    });
     ui.menuBtn.addEventListener('click', () => ui.sidebar.classList.toggle('open'));
     ui.closeSidebarBtn.addEventListener('click', () => ui.sidebar.classList.remove('open'));
     ui.themeToggle.addEventListener('click', toggleTheme);
     ui.modelSelect.addEventListener('change', saveSettings);
-    // FEATURE: Save settings when API key is changed
-    ui.apiKeyInput.addEventListener('change', saveSettings);
+    ui.apiKeyInput.addEventListener('blur', saveSettings); // Save when user clicks away
     ui.redeemBtn.addEventListener('click', redeemCode);
     ui.uploadBtn.addEventListener('click', () => ui.imageInput.click());
     ui.imageInput.addEventListener('change', handleImageUpload);
@@ -96,28 +100,33 @@ function setupEventListeners() {
     ui.importFileInput.addEventListener('change', importData);
 }
 
-// FIX: saveSettings now sends all settings including the API key
 async function saveSettings() {
     try {
-        const response = await apiRequest('/settings', {
+        const apiKey = ui.apiKeyInput.value.trim();
+        // Prevent saving if it's the same as the current state
+        if (apiKey === (appState.apiKey || '') &&
+            ui.modelSelect.value === appState.model &&
+            ui.body.dataset.theme === appState.theme) {
+            return;
+        }
+
+        const response = await apiRequest('settings', {
             method: 'POST',
             body: JSON.stringify({
                 theme: ui.body.dataset.theme,
                 model: ui.modelSelect.value,
-                apiKey: ui.apiKeyInput.value.trim(),
+                apiKey: apiKey,
             })
         });
-        // Update local state with the confirmed state from the server
         updateAppState(response.newState);
-        // Add a visual confirmation for the user
         const originalColor = ui.apiKeyInput.style.borderColor;
-        ui.apiKeyInput.style.borderColor = '#34c759'; // Green border
+        ui.apiKeyInput.style.borderColor = '#34c759';
         setTimeout(() => { ui.apiKeyInput.style.borderColor = originalColor; }, 2000);
 
     } catch (error) {
         alert(`设置保存失败: ${error.message}`);
         const originalColor = ui.apiKeyInput.style.borderColor;
-        ui.apiKeyInput.style.borderColor = '#d93025'; // Red border
+        ui.apiKeyInput.style.borderColor = '#d93025';
         setTimeout(() => { ui.apiKeyInput.style.borderColor = originalColor; }, 2000);
     }
 }
@@ -145,14 +154,14 @@ async function redeemCode() {
     }
 }
 
+// FIX: Complete logic overhaul using UNLIMITED_SENTINEL (-1)
 function updateUsageDisplay() { 
     if (appState.apiKey) {
-        // If user has their own key, hide usage info
         ui.usageInfo.style.display = 'none';
         ui.unlimitedInfo.style.display = 'block';
         ui.unlimitedInfo.querySelector('p').innerHTML = '✓ 使用您自己的 API Key';
 
-    } else if (appState.trialCount === Infinity) {
+    } else if (appState.trialCount === UNLIMITED_SENTINEL) {
         ui.usageInfo.style.display = 'none';
         ui.unlimitedInfo.style.display = 'block';
         ui.unlimitedInfo.querySelector('p').innerHTML = '✓ 已解锁无限使用权限';
@@ -233,7 +242,6 @@ function renderConversationList() {
     });
 }
 
-// --- 消息与图片处理 ---
 function handleImageUpload(event) {
     const file = event.target.files[0];
     if (file) {

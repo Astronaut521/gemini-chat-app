@@ -5,7 +5,6 @@ let imageData = null;
 
 // --- 全局API请求函数 ---
 async function apiRequest(endpoint, options = {}) {
-    // 确保 endpoint 以 / 开头
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
     const response = await fetch(`/api${path}`, {
@@ -38,6 +37,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         usageInfo: document.getElementById('usage-info'), unlimitedInfo: document.getElementById('unlimited-info'),
         importDataBtn: document.getElementById('import-data-btn'), exportDataBtn: document.getElementById('export-data-btn'),
         importFileInput: document.getElementById('import-file-input'),
+        // FEATURE: Get the API Key input element
+        apiKeyInput: document.getElementById('api-key-input'),
     });
     
     setupEventListeners();
@@ -59,13 +60,13 @@ async function loadInitialState() {
 function updateAppState(newState) {
     appState = newState;
     
-    // 如果没有有效的对话，让服务器创建一个
     if (!appState.activeConversationId || !appState.conversations[appState.activeConversationId]) {
         createNewConversation(false);
     } else {
-        // 应用状态到UI
         ui.body.dataset.theme = appState.theme;
         ui.modelSelect.value = appState.model;
+        // FEATURE: Set the API key input value
+        ui.apiKeyInput.value = appState.apiKey || '';
         updateUsageDisplay();
         renderConversation();
         renderConversationList();
@@ -84,6 +85,8 @@ function setupEventListeners() {
     ui.closeSidebarBtn.addEventListener('click', () => ui.sidebar.classList.remove('open'));
     ui.themeToggle.addEventListener('click', toggleTheme);
     ui.modelSelect.addEventListener('change', saveSettings);
+    // FEATURE: Save settings when API key is changed
+    ui.apiKeyInput.addEventListener('change', saveSettings);
     ui.redeemBtn.addEventListener('click', redeemCode);
     ui.uploadBtn.addEventListener('click', () => ui.imageInput.click());
     ui.imageInput.addEventListener('change', handleImageUpload);
@@ -93,25 +96,34 @@ function setupEventListeners() {
     ui.importFileInput.addEventListener('change', importData);
 }
 
+// FIX: saveSettings now sends all settings including the API key
 async function saveSettings() {
     try {
-        await apiRequest('settings', {
+        const response = await apiRequest('/settings', {
             method: 'POST',
             body: JSON.stringify({
                 theme: ui.body.dataset.theme,
                 model: ui.modelSelect.value,
+                apiKey: ui.apiKeyInput.value.trim(),
             })
         });
-        appState.model = ui.modelSelect.value;
+        // Update local state with the confirmed state from the server
+        updateAppState(response.newState);
+        // Add a visual confirmation for the user
+        const originalColor = ui.apiKeyInput.style.borderColor;
+        ui.apiKeyInput.style.borderColor = '#34c759'; // Green border
+        setTimeout(() => { ui.apiKeyInput.style.borderColor = originalColor; }, 2000);
+
     } catch (error) {
         alert(`设置保存失败: ${error.message}`);
+        const originalColor = ui.apiKeyInput.style.borderColor;
+        ui.apiKeyInput.style.borderColor = '#d93025'; // Red border
+        setTimeout(() => { ui.apiKeyInput.style.borderColor = originalColor; }, 2000);
     }
 }
 
 async function toggleTheme() {
-    const newTheme = ui.body.dataset.theme === 'dark' ? 'light' : 'dark';
-    ui.body.dataset.theme = newTheme;
-    appState.theme = newTheme;
+    ui.body.dataset.theme = ui.body.dataset.theme === 'dark' ? 'light' : 'dark';
     await saveSettings();
 }
 
@@ -134,9 +146,16 @@ async function redeemCode() {
 }
 
 function updateUsageDisplay() { 
-    if (appState.trialCount === Infinity) {
+    if (appState.apiKey) {
+        // If user has their own key, hide usage info
         ui.usageInfo.style.display = 'none';
         ui.unlimitedInfo.style.display = 'block';
+        ui.unlimitedInfo.querySelector('p').innerHTML = '✓ 使用您自己的 API Key';
+
+    } else if (appState.trialCount === Infinity) {
+        ui.usageInfo.style.display = 'none';
+        ui.unlimitedInfo.style.display = 'block';
+        ui.unlimitedInfo.querySelector('p').innerHTML = '✓ 已解锁无限使用权限';
     } else {
         ui.usageInfo.style.display = 'block';
         ui.unlimitedInfo.style.display = 'none';
@@ -144,13 +163,9 @@ function updateUsageDisplay() {
     }
 }
 
-// --- 对话管理 ---
 async function handleConversationAction(action, payload = {}) {
     try {
-        const newState = await apiRequest('conversations', {
-            method: 'POST',
-            body: JSON.stringify({ action, ...payload })
-        });
+        const newState = await apiRequest('conversations', { method: 'POST', body: JSON.stringify({ action, ...payload }) });
         updateAppState(newState);
         ui.sidebar.classList.remove('open');
     } catch (error) {
@@ -290,25 +305,20 @@ async function sendMessage() {
         
         const responseData = await apiRequest('chat', {
             method: 'POST',
-            body: JSON.stringify({
-                contents: historyToSend,
-                model: modelToUse,
-                tools: tools
-            })
+            body: JSON.stringify({ contents: historyToSend, model: modelToUse, tools: tools })
         });
         
         thinkingDiv.remove();
 
-        if (!responseData.candidates || !responseData.candidates[0].content) {
-            const feedback = responseData.promptFeedback;
-            const reason = feedback ? `原因: ${feedback.blockReason}` : "未知原因。";
-            throw new Error(`模型返回了无效的响应或内容被安全策略阻止。${reason}`);
+        if (responseData.candidates && responseData.candidates[0].content) {
+             const botMessage = responseData.candidates[0].content;
+             addMessage(botMessage.role, botMessage.parts);
+        } else {
+             const feedback = responseData.promptFeedback;
+             const reason = feedback ? `原因: ${feedback.blockReason}` : "未知原因或无内容返回。";
+             throw new Error(`模型返回了无效的响应。${reason}`);
         }
-        
-        const botMessage = responseData.candidates[0].content;
-        addMessage(botMessage.role, botMessage.parts);
-
-        // 成功后，重新从服务器同步最新状态
+       
         await loadInitialState();
 
     } catch (error) {
@@ -319,7 +329,6 @@ async function sendMessage() {
     }
 }
 
-// --- 数据导入/导出 ---
 function exportData() {
     const dataStr = JSON.stringify(appState, null, 2);
     const dataBlob = new Blob([dataStr], {type: "application/json"});

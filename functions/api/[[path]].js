@@ -1,7 +1,10 @@
 // --- 后端配置 ---
 const MAX_TRIAL_COUNT = 3;
-// FIX: Using -1 to represent Infinity, as JSON does not support Infinity.
 const UNLIMITED_SENTINEL = -1; 
+const VALID_MODELS = [
+    'gemini-1.5-pro-latest', 'gemini-1.5-flash-latest', 'gemini-pro',
+];
+const DEFAULT_MODEL = 'gemini-1.5-flash-latest';
 const REDEEM_CODES = {
     "GEMINI-FOR-ALL": UNLIMITED_SENTINEL,
     'BLUE-GEM-A8C5': 5, 'BLUE-GEM-F2B9': 5, 'BLUE-GEM-7D4E': 5, 'BLUE-GEM-9C1A': 5, 'BLUE-GEM-3E8F': 5,
@@ -14,10 +17,9 @@ const REDEEM_CODES = {
 
 // --- 主处理函数 ---
 export async function onRequest(context) {
+    // ... (no changes in this function)
     if (context.request.method === 'OPTIONS') {
-        return new Response(null, {
-            headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' }
-        });
+        return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' } });
     }
     try {
         const url = new URL(context.request.url);
@@ -27,20 +29,46 @@ export async function onRequest(context) {
         response.headers.set('Access-Control-Allow-Origin', '*');
         return response;
     } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), { 
-            status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-        });
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
     }
 }
+
+// --- DATA REPAIR LOGIC ---
+function repairAndValidateState(state) {
+    let repaired = false;
+    const defaultState = getInitialUserState();
+
+    if (typeof state.trialCount !== 'number') {
+        state.trialCount = defaultState.trialCount;
+        state.redeemedCodes = []; // Reset codes as well
+        repaired = true;
+    }
+    if (!VALID_MODELS.includes(state.model)) {
+        state.model = defaultState.model;
+        repaired = true;
+    }
+    // Ensure apiKey exists
+    if (state.apiKey === undefined) {
+        state.apiKey = null;
+    }
+    return { ...state, repaired };
+}
+
 
 async function handleApiRequest(endpoint, context) {
     const { request, env } = context;
     const { userId, responseHeaders } = await getUserIdFromCookie(request);
     let userState = await env.CHAT_DATA.get(userId, { type: 'json' });
+    
     if (!userState) {
         userState = getInitialUserState();
+    } else {
+        // Here is the "data doctor"
+        userState = repairAndValidateState(userState);
     }
+    
     let response;
+    // ... (The switch statement remains the same)
     switch (endpoint) {
         case 'state': response = new Response(JSON.stringify(userState), { headers: { 'Content-Type': 'application/json' } }); break;
         case 'chat': response = await handleChat(request, env, userId, userState); break;
@@ -50,22 +78,22 @@ async function handleApiRequest(endpoint, context) {
         case 'restore': response = await handleRestore(request, env, userId); break;
         default: response = new Response(JSON.stringify({ error: 'API Endpoint Not Found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
     }
+
     for (const [key, value] of Object.entries(responseHeaders)) {
         response.headers.set(key, value);
     }
     return response;
 }
 
-// --- API 处理函数 ---
+// --- API 处理函数 (with fixes) ---
 async function handleChat(request, env, userId, userState) {
     const apiKey = userState.apiKey || env.GEMINI_API_KEY;
     if (!apiKey) {
-         return new Response(JSON.stringify({ error: '服务器未配置API Key，且用户未提供自定义Key。' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+         return new Response(JSON.stringify({ error: '服务器未配置API Key，且用户未提供自定义Key。' }), { status: 500 });
     }
 
-    // FIX: Check against UNLIMITED_SENTINEL (-1)
     if (!userState.apiKey && userState.trialCount !== UNLIMITED_SENTINEL && userState.trialCount <= 0) {
-        return new Response(JSON.stringify({ error: '您的试用次数已用完！请输入兑换码或在设置中提供您自己的API Key。' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ error: '您的试用次数已用完！请输入兑换码或在设置中提供您自己的API Key。' }), { status: 403 });
     }
 
     const requestBody = await request.json();
@@ -85,11 +113,10 @@ async function handleChat(request, env, userId, userState) {
     const geminiResponse = await fetch(geminiRequest);
     if (!geminiResponse.ok) {
         const errorText = await geminiResponse.text();
-        return new Response(JSON.stringify({ error: `API 错误: ${geminiResponse.status} - ${errorText}` }), { status: geminiResponse.status, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ error: `API 错误: ${geminiResponse.status} - ${errorText}` }), { status: geminiResponse.status });
     }
     const responseData = await geminiResponse.json();
     
-    // FIX: Check against UNLIMITED_SENTINEL (-1) before deducting
     if (!userState.apiKey && userState.trialCount !== UNLIMITED_SENTINEL) {
         userState.trialCount--;
     }
@@ -139,7 +166,6 @@ async function handleSettings(request, env, userId, userState) {
     return new Response(JSON.stringify({ success: true, newState: userState }), { headers: { 'Content-Type': 'application/json' } });
 }
 
-// FIX: Complete logic overhaul using UNLIMITED_SENTINEL (-1)
 async function handleRedeem(request, env, userId, userState) {
     const { code } = await request.json();
     const upperCaseCode = code.trim().toUpperCase();
@@ -177,11 +203,10 @@ async function handleRestore(request, env, userId) {
     return new Response(JSON.stringify({ success: false, message: '文件格式不正确。'}), { status: 400 });
 }
 
-// --- 辅助函数 ---
 function getInitialUserState() {
     const initialId = `conv_${Date.now()}`;
     return {
-        theme: 'light', model: 'gemini-1.5-flash-latest',
+        theme: 'light', model: DEFAULT_MODEL,
         trialCount: MAX_TRIAL_COUNT, redeemedCodes: [],
         apiKey: null, 
         conversations: { [initialId]: { id: initialId, title: "新对话 1", history: [] } },

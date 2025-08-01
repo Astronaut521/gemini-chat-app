@@ -9,27 +9,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/tokyo-night-dark.min.css">
     <style>
         :root {
-            --bg-light: #f4f6f8; 
-            --text-light: #202124; 
-            --chat-bg-light: #ffffff;
-            --border-light: #e0e0e0;
-            --bot-message-bg-light: #f1f3f4; /* A distinct, Google-style grey */
-            
-            --bg-dark: #202124; /* Darker background */
-            --text-dark: #e8eaed; 
-            --chat-bg-dark: #292a2d; /* Slightly lighter chat area */
-            --border-dark: #3c4043; 
-            --bot-message-bg-dark: #3c4043; /* Bot message matches input fields */
-            
-            --accent: #1a73e8; 
-            --white: #ffffff; 
-            --gray: #8e8e93;
+            --bg-light: #f4f6f8; --text-light: #202124; --chat-bg-light: #ffffff;
+            --border-light: #e8e8e8; --accent-bg-light: #ffffff; --bg-dark: #1c1c1e;
+            --text-dark: #e8eaed; --chat-bg-dark: #2a2a2e; --border-dark: #3c4043;
+            --accent-bg-dark: #2f2f33; --accent: #1a73e8; --white: #ffffff; --gray: #8e8e93;
             --grad-accent: linear-gradient(135deg, #1a73e8 0%, #4285F4 40%, #9b72cb 75%, #d96570 90%, #f2a640 100%);
             --danger: #d93025;
         }
-        [data-theme="light"] { --bg: var(--bg-light); --text: var(--text-light); --chat-bg: var(--chat-bg-light); --border: var(--border-light); --bot-bg: var(--bot-message-bg-light); }
-        [data-theme="dark"] { --bg: var(--bg-dark); --text: var(--text-dark); --chat-bg: var(--chat-bg-dark); --border: var(--border-dark); --bot-bg: var(--bot-message-bg-dark); }
-        
+        [data-theme="light"] { --bg: var(--bg-light); --text: var(--text-light); --chat-bg: var(--chat-bg-light); --border: var(--border-light); --accent-bg: var(--accent-bg-light); }
+        [data-theme="dark"] { --bg: var(--bg-dark); --text: var(--text-dark); --chat-bg: var(--chat-bg-dark); --border: var(--border-dark); --accent-bg: var(--accent-bg-dark); }
         *, *::before, *::after { box-sizing: border-box; }
         html { height: -webkit-fill-available; }
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; overflow: hidden; }
@@ -42,7 +30,7 @@
         .conversation-item { padding: 0.8rem 1rem; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
         .conversation-item .title { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         [data-theme="light"] .conversation-item.active { background-color: #e8f0fe; }
-        [data-theme="dark"] .conversation-item.active { background-color: #3c4043; }
+        [data-theme="dark"] .conversation-item.active { background-color: #3a3f58; }
         .sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); }
         .main-content { display: flex; flex-direction: column; width: 100%; height: 100%; }
         .header { background: var(--chat-bg); padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; height: 60px; }
@@ -50,12 +38,12 @@
         .chat-container { flex: 1; overflow-y: auto; padding: 1rem; }
         .message { display: flex; flex-direction: column; margin: 1.5rem 1rem; max-width: 90%; animation: fadeIn 0.5s; }
         .message .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--grad-accent); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 500; flex-shrink: 0; margin-bottom: 0.5rem; }
-        .message .content { max-width: 100%; padding: 0.8rem 1rem; border-radius: 18px; position: relative; word-wrap: break-word; line-height: 1.6; }
+        .message .content { max-width: 100%; padding: 0.6rem 1rem; border-radius: 18px; position: relative; word-wrap: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
         .user { align-self: flex-end; align-items: flex-end; }
         .user .content { background: var(--accent); color: var(--white); border-top-right-radius: 4px; }
         .user .avatar { background: #7f8c8d; }
         .bot { align-self: flex-start; align-items: flex-start; }
-        .bot .content { background: var(--bot-bg); border: 1px solid var(--border); border-top-left-radius: 4px; }
+        .bot .content { background: var(--accent-bg); border: 1px solid var(--border); border-top-left-radius: 4px; }
         .bot pre { background-color: #282c34; color: #abb2bf; padding: 1em; border-radius: 8px; overflow-x: auto; position: relative; }
         .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: var(--white); border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; opacity: 0; transition: opacity 0.2s; font-size: 0.8em; }
         pre:hover .copy-btn { opacity: 0.7; }
@@ -63,70 +51,26 @@
         #image-preview-container { position: relative; align-self: flex-start; margin: 0.5rem 1rem 0; display: none; }
         #image-preview { max-width: 80px; max-height: 80px; border-radius: 8px; border: 2px solid var(--border); }
         #remove-img-btn { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--chat-bg); cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1; }
-        
-        /* --- FINAL FIX: Complete Overhaul of the Input Area Layout --- */
-        .input-area { 
-            display: flex; 
-            padding: 0.75rem 1rem; 
-            gap: 0.75rem; 
-            align-items: flex-end; /* CRITICAL: Aligns all items to the bottom */
-        }
-        #text-input { 
-            flex: 1; 
-            border: 1px solid var(--border);
-            outline: none; 
-            padding: 12px 16px; /* Perfect for single-line vertical centering */
-            border-radius: 22px; 
-            resize: none; 
-            font-size: 1rem; 
-            background: var(--bg); 
-            color: var(--text); 
-            max-height: 150px; 
-            line-height: 1.5;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        #text-input:focus { border-color: var(--accent); }
-        #text-input::-webkit-scrollbar { display: none; }
-
-        .input-options { 
-            display: flex; 
-            gap: 0.5rem; 
-            align-items: center;
-            padding-bottom: 11px; /* Aligns with textarea text baseline */
-        }
-        .deluxe-btn { 
-            background: var(--grad-accent); 
-            color: var(--white); 
-            border: none; 
-            width: 44px; 
-            height: 44px; 
-            border-radius: 50%; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            transition: transform 0.2s ease-out; 
-            flex-shrink: 0; 
-        }
+        .input-area { display: flex; padding: 1rem; gap: 0.75rem; align-items: center; }
+        #text-input { flex: 1; border: none; outline: none; padding: 10px 1rem; border-radius: 20px; resize: none; font-size: 1rem; background: var(--bg); color: var(--text); max-height: 120px; line-height: 1.5; }
+        .deluxe-btn { background: var(--grad-accent); color: var(--white); border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease-out; flex-shrink: 0; }
         .deluxe-btn:hover { transform: scale(1.1); }
         .deluxe-btn svg { width: 20px; height: 20px; }
-        
-        /* --- FINAL FIX: Settings Modal UI --- */
+        #send-btn svg { transform: translate(-1px, 1px); }
+        #menu-btn svg { transform: translateY(-1px); }
+        #settings-btn svg { transform: translateY(-1px); }
+        .text-btn { background: var(--accent-bg); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 500; }
+        .icon-btn { background: none; border: none; color: var(--text); cursor: pointer; opacity: 0.7; padding: 0.5rem; }
+        .icon-btn.delete-btn { color: var(--danger); opacity: 0.6; }
+        .icon-btn.delete-btn:hover { opacity: 1; }
         #settings-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1001; backdrop-filter: blur(4px); }
         #settings-modal { background: var(--chat-bg); padding: 1.5rem; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem; }
-        .modal-section { margin-bottom: 1.25rem; }
-        .modal-section label { font-weight: 500; font-size: 0.9rem; }
-        .modal-section input[type="text"], .modal-section input[type="password"], .modal-section select {width:100%;padding:10px;margin-top:8px; border-radius:8px; background:var(--bg); color:var(--text); border: 1px solid var(--border); font-size: 1rem;}
-        /* Restore original button style */
-        .text-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 500; }
-        .text-btn:hover { border-color: var(--accent); }
-        .icon-btn { background: none; border: none; color: var(--gray); cursor: pointer; opacity: 0.8; padding: 0.5rem; }
-        .icon-btn:hover { color: var(--text); }
-        .data-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 0.75rem; /* Added margin for spacing */ }
-        .developer-credit { text-align:center; font-size:0.8em; color:var(--gray); margin-top: 2rem; }
-
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem; }
+        .modal-section { margin-bottom: 1rem; }
+        .modal-section input[type="text"], .modal-section input[type="password"] {width:100%;padding:8px;margin-top:5px; border-radius:8px; background:var(--bg); color:var(--text); border: 1px solid var(--border);}
+        /* --- 修改点: 增加与上方文字的间距 --- */
+        .data-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 0.75rem; }
+        [data-theme="dark"] #model-select, [data-theme="dark"] #redeem-code { background-color: var(--accent-bg-dark); color: var(--text-dark); border: 1px solid var(--border-dark); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 375px) { .input-area { gap: 0.5rem; padding: 0.75rem; } .deluxe-btn { width: 40px; height: 40px; } .deluxe-btn svg { width: 18px; height: 18px; } }
     </style>
@@ -155,13 +99,10 @@
                 <img id="image-preview" src="">
                 <button id="remove-img-btn">×</button>
             </div>
+            <!-- --- 修改点: 移除了联网选项, 输入框会自动变宽 --- -->
             <div class="input-area">
                 <button class="deluxe-btn" id="upload-btn" title="上传图片"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></button>
                 <textarea id="text-input" placeholder="输入消息..." rows="1"></textarea>
-                <div class="input-options">
-                    <input type="checkbox" id="web-search-toggle" title="联网搜索">
-                    <label for="web-search-toggle">联网</label>
-                </div>
                 <button class="deluxe-btn" id="send-btn" title="发送"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button>
                 <input type="file" id="image-input" accept="image/*" style="display: none;">
             </div>
@@ -177,30 +118,35 @@
                 <label for="api-key-input">自定义 API Key (可选):</label>
                 <input type="password" id="api-key-input" placeholder="粘贴你的 Gemini Key 以使用自己的额度">
             </div>
+            <!-- --- 修改点: 更新模型列表和分组 --- -->
             <div class="modal-section">
                 <label for="model-select">选择模型:</label>
-                <select id="model-select">
-                     <optgroup label="最新模型">
+                <select id="model-select" style="width:100%;padding:8px;margin-top:5px;border-radius:8px; background:var(--bg); color:var(--text); border: 1px solid var(--border);">
+                    <optgroup label="最新模型">
+                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                        <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (推荐)</option>
+                    </optgroup>
+                    <optgroup label="标准模型">
                         <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
                         <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
                     </optgroup>
-                    <optgroup label="标准模型">
+                    <optgroup label="旧版模型">
                         <option value="gemini-pro">Gemini 1.0 Pro</option>
                     </optgroup>
                 </select>
             </div>
             <div class="modal-section" style="display: flex; justify-content: space-between; align-items: center;">
-                <label>深色模式</label>
+                <label>暗色模式</label>
                 <button class="text-btn" id="theme-toggle">切换</button>
             </div>
             <div class="modal-section">
                 <label for="redeem-code">兑换码:</label>
                 <input type="text" id="redeem-code" placeholder="输入兑换码">
-                <button id="redeem-btn" class="text-btn" style="width:100%;margin-top:0.75rem;justify-content:center;">兑换</button>
+                <button id="redeem-btn" class="text-btn" style="width:100%;margin-top:0.5rem;justify-content:center;">兑换</button>
             </div>
             <div id="usage-info" class="modal-section" style="text-align: left;">
                 <p id="usage-count" style="margin: 0; font-weight: 500;">剩余次数: ...</p>
-                <p style="font-size:0.8em; color:var(--gray); margin-top: 4px;">提示: 每个账户有3次初始试用机会。</p>
+                <p style="font-size:0.8em; color:var(--gray);">提示: 每个账户有3次初始试用机会。</p>
             </div>
             <div id="unlimited-info" class="modal-section" style="text-align: left; display: none;">
                 <p style="margin: 0; font-weight: 500; color: #34c759;">✓ 已解锁无限使用权限</p>
@@ -209,13 +155,13 @@
             <div class="modal-section">
                 <label>数据管理:</label>
                 <div class="data-buttons">
-                    <!-- Restored old button style -->
                     <button id="import-data-btn" class="text-btn">导入数据</button>
                     <button id="export-data-btn" class="text-btn">导出数据</button>
+                    <input type="file" id="import-file-input" accept=".json" style="display:none;">
                 </div>
                  <p style="font-size:0.8em; color:var(--gray); text-align:center; margin-top:0.5rem;">备份您的对话和设置到本地文件。</p>
             </div>
-            <div class="developer-credit">
+            <div style="text-align:center; font-size:0.8em; color:var(--gray); margin-top: 1rem;">
                 <p style="margin:0;">开发者</p>
                 <p style="margin:0.2rem 0;">太空人 & Gemini Pro</p>
             </div>

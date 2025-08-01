@@ -2,7 +2,7 @@ const ui = {};
 let appState = {};
 let isLoading = false;
 let imageData = null;
-const UNLIMITED_SENTINEL = -1; 
+const UNLIMITED_SENTINEL = -1; // Make frontend aware of the new standard
 
 // --- 全局API请求函数 ---
 async function apiRequest(endpoint, options = {}) {
@@ -81,7 +81,6 @@ function autoGrowTextarea() {
 function setupEventListeners() {
     ui.sendBtn.addEventListener('click', sendMessage);
     ui.textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
-    // FIX: Attach input event for auto-growing
     ui.textInput.addEventListener('input', autoGrowTextarea);
     ui.addConversationBtn.addEventListener('click', () => createNewConversation(true));
     ui.settingsBtn.addEventListener('click', () => ui.settingsOverlay.style.display = 'flex');
@@ -159,7 +158,6 @@ function updateUsageDisplay() {
     }
 }
 
-// ... (The rest of the functions from here on have no changes)
 async function handleConversationAction(action, payload = {}) {
     try {
         const newState = await apiRequest('conversations', { method: 'POST', body: JSON.stringify({ action, ...payload }) });
@@ -222,9 +220,9 @@ function renderConversationList() {
         const itemEl = document.createElement('div');
         itemEl.className = 'conversation-item';
         if (conv.id === appState.activeConversationId) itemEl.classList.add('active');
-        itemEl.innerHTML = `<span class="title">${conv.title}</span><div><button class="icon-btn" title="重命名"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="icon-btn delete-btn" title="删除对话"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div>`;
-        itemEl.querySelector('.icon-btn[title="重命名"]').onclick = (event) => renameConversation(conv.id, event);
-        itemEl.querySelector('.icon-btn.delete-btn').onclick = (event) => deleteConversation(conv.id, event);
+        itemEl.innerHTML = `<span class="title">${conv.title}</span><div><button class="icon-btn" title="重命名"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="icon-btn" title="删除对话"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div>`;
+        itemEl.querySelector('button[title="重命名"]').onclick = (event) => renameConversation(conv.id, event);
+        itemEl.querySelector('button[title="删除对话"]').onclick = (event) => deleteConversation(conv.id, event);
         itemEl.onclick = () => setActiveConversation(conv.id);
         listEl.appendChild(itemEl);
     });

@@ -18,7 +18,6 @@ async function apiRequest(endpoint, options = {}) {
 // --- 初始化与状态管理 ---
 document.addEventListener('DOMContentLoaded', async () => {
     Object.assign(ui, {
-        // --- 修改点: 获取加载页面元素 ---
         splashScreen: document.getElementById('splash-screen'),
         appContainer: document.querySelector('.app-container'), body: document.body, chatContainer: document.getElementById('chat-container'),
         textInput: document.getElementById('text-input'), sendBtn: document.getElementById('send-btn'),
@@ -44,7 +43,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.addEventListener('resize', adjustHeight);
 });
 
-// --- 修改点: 添加隐藏加载页面的逻辑 ---
 async function loadInitialState() {
     try {
         const state = await apiRequest('state');
@@ -56,7 +54,6 @@ async function loadInitialState() {
         console.error("无法从服务器加载状态:", error);
         alert(`初始化失败: ${error.message}`);
     } finally {
-        // 无论成功失败，都隐藏加载页面
         if (ui.splashScreen) {
             ui.splashScreen.classList.add('hidden');
         }
@@ -355,6 +352,7 @@ function importData(event) {
                 location.reload();
             }
         } catch (error) {
+            // --- 错误修复：移除了之前错误的语法 ---
             alert(`导入失败：${error.message}`);
         }
     };

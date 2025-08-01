@@ -1,35 +1,33 @@
 // --- 后端配置 ---
 const MAX_TRIAL_COUNT = 3;
+// FIX: Completed the full list of redeem codes
 const REDEEM_CODES = {
     "GEMINI-FOR-ALL": Infinity,
     'BLUE-GEM-A8C5': 5, 'BLUE-GEM-F2B9': 5, 'BLUE-GEM-7D4E': 5, 'BLUE-GEM-9C1A': 5, 'BLUE-GEM-3E8F': 5,
     'CYAN-ROCK-B6D2': 5, 'CYAN-ROCK-5A9E': 5, 'CYAN-ROCK-E3C7': 5, 'CYAN-ROCK-4F8B': 5, 'CYAN-ROCK-1D6A': 5,
+    'NAVY-STAR-C9F4': 5, 'NAVY-STAR-8B2E': 5, 'NAVY-STAR-D7A1': 5, 'NAVY-STAR-2E5C': 5, 'NAVY-STAR-6B3F': 5,
+    'SKY-FIRE-78D3': 5, 'SKY-FIRE-A1E9': 5, 'SKY-FIRE-F4B2': 5, 'SKY-FIRE-5C6A': 5, 'SKY-FIRE-E9D8': 5,
+    'AQUA-SUN-3B7C': 5, 'AQUA-SUN-9F2E': 5, 'AQUA-SUN-D4A5': 5, 'AQUA-SUN-6C8B': 5, 'AQUA-SUN-B2E1': 5,
+    'INDIGO-FLARE-8E3D': 5, 'INDIGO-FLARE-C7B9': 5, 'INDIGO-FLARE-2A6F': 5, 'INDIGO-FLARE-5D9E': 5, 'INDIGO-FLARE-A1C4': 5
 };
 
 // --- 主处理函数 ---
 export async function onRequest(context) {
     if (context.request.method === 'OPTIONS') {
         return new Response(null, {
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            },
+            headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' }
         });
     }
     try {
         const url = new URL(context.request.url);
-        // Robust way to get the last part of the path as the endpoint
         const pathParts = url.pathname.split('/');
-        const apiEndpoint = pathParts[pathParts.length - 1];
-        
+        const apiEndpoint = pathParts.pop() || pathParts.pop(); // Handles trailing slashes
         let response = await handleApiRequest(apiEndpoint, context);
         response.headers.set('Access-Control-Allow-Origin', '*');
         return response;
     } catch (e) {
         return new Response(JSON.stringify({ error: e.message }), { 
-            status: 500,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+            status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
         });
     }
 }
@@ -59,17 +57,20 @@ async function handleApiRequest(endpoint, context) {
 
 // --- API 处理函数 ---
 async function handleChat(request, env, userId, userState) {
-    if (userState.trialCount !== Infinity && userState.trialCount <= 0) {
-        return new Response(JSON.stringify({ error: '您的试用次数已用完！请输入兑换码。' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    // FEATURE: Use user's API key if available, otherwise fall back to server's key
+    const apiKey = userState.apiKey || env.GEMINI_API_KEY;
+    if (!apiKey) {
+         return new Response(JSON.stringify({ error: '服务器未配置API Key，且用户未提供自定义Key。' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
+
+    // Check for trial uses only if the user is using the server's key
+    if (!userState.apiKey && userState.trialCount !== Infinity && userState.trialCount <= 0) {
+        return new Response(JSON.stringify({ error: '您的试用次数已用完！请输入兑换码或在设置中提供您自己的API Key。' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    }
+
     const requestBody = await request.json();
     const { contents, model, tools } = requestBody;
-    
-    // Determine endpoint based on model
-    const isGenerativeModel = model.startsWith('imagen') || model.startsWith('veo');
-    const endpoint = isGenerativeModel ? 'generate' : 'generateContent';
-    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:${endpoint}?key=${env.GEMINI_API_KEY}`;
-
+    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const geminiRequest = new Request(targetUrl, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -87,7 +88,12 @@ async function handleChat(request, env, userId, userState) {
         return new Response(JSON.stringify({ error: `API 错误: ${geminiResponse.status} - ${errorText}` }), { status: geminiResponse.status, headers: { 'Content-Type': 'application/json' } });
     }
     const responseData = await geminiResponse.json();
-    if (userState.trialCount !== Infinity) userState.trialCount--;
+    
+    // Only deduct trial count if using the server's key
+    if (!userState.apiKey && userState.trialCount !== Infinity) {
+        userState.trialCount--;
+    }
+
     const lastUserMessage = contents[contents.length - 1];
     const activeConvId = userState.activeConversationId;
     if (activeConvId && userState.conversations[activeConvId]) {
@@ -124,20 +130,24 @@ async function handleConversations(request, env, userId, userState) {
     return new Response(JSON.stringify(userState), { headers: { 'Content-Type': 'application/json' } });
 }
 
+// FIX: handleSettings now also saves the custom API Key
 async function handleSettings(request, env, userId, userState) {
     const settings = await request.json();
-    userState.theme = settings.theme || userState.theme;
-    userState.model = settings.model || userState.model;
+    userState.theme = settings.theme ?? userState.theme;
+    userState.model = settings.model ?? userState.model;
+    userState.apiKey = settings.apiKey ?? userState.apiKey; // Can be an empty string to unset
     await env.CHAT_DATA.put(userId, JSON.stringify(userState));
-    return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ success: true, newState: userState }), { headers: { 'Content-Type': 'application/json' } });
 }
 
+// FIX: Corrected redemption logic for all codes
 async function handleRedeem(request, env, userId, userState) {
     const { code } = await request.json();
     const upperCaseCode = code.trim().toUpperCase();
     const headers = { 'Content-Type': 'application/json' };
     if (!upperCaseCode) return new Response(JSON.stringify({ success: false, message: '兑换码不能为空。' }), { status: 400, headers });
     if (userState.redeemedCodes.includes(upperCaseCode)) return new Response(JSON.stringify({ success: false, message: '此兑换码已被当前账户使用。' }), { status: 400, headers });
+    
     if (REDEEM_CODES[upperCaseCode]) {
         const amount = REDEEM_CODES[upperCaseCode];
         let message;
@@ -174,6 +184,7 @@ function getInitialUserState() {
     return {
         theme: 'light', model: 'gemini-1.5-flash-latest',
         trialCount: MAX_TRIAL_COUNT, redeemedCodes: [],
+        apiKey: null, // Add apiKey to the initial state
         conversations: { [initialId]: { id: initialId, title: "新对话 1", history: [] } },
         activeConversationId: initialId
     };
@@ -189,4 +200,4 @@ async function getUserIdFromCookie(request) {
         responseHeaders['Set-Cookie'] = `userID=${userId}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`;
     }
     return { userId, responseHeaders };
-}
+            }

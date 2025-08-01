@@ -2,9 +2,10 @@
 const MAX_TRIAL_COUNT = 3;
 const UNLIMITED_SENTINEL = -1; 
 const VALID_MODELS = [
+    'gemini-2.5-pro', 'gemini-2.5-flash',
     'gemini-1.5-pro-latest', 'gemini-1.5-flash-latest', 'gemini-pro',
 ];
-const DEFAULT_MODEL = 'gemini-1.5-flash-latest';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 const REDEEM_CODES = {
     "GEMINI-FOR-ALL": UNLIMITED_SENTINEL,
     'BLUE-GEM-A8C5': 5, 'BLUE-GEM-F2B9': 5, 'BLUE-GEM-7D4E': 5, 'BLUE-GEM-9C1A': 5, 'BLUE-GEM-3E8F': 5,
@@ -17,7 +18,6 @@ const REDEEM_CODES = {
 
 // --- 主处理函数 ---
 export async function onRequest(context) {
-    // ... (no changes in this function)
     if (context.request.method === 'OPTIONS') {
         return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' } });
     }
@@ -47,7 +47,6 @@ function repairAndValidateState(state) {
         state.model = defaultState.model;
         repaired = true;
     }
-    // Ensure apiKey exists
     if (state.apiKey === undefined) {
         state.apiKey = null;
     }
@@ -63,12 +62,10 @@ async function handleApiRequest(endpoint, context) {
     if (!userState) {
         userState = getInitialUserState();
     } else {
-        // Here is the "data doctor"
         userState = repairAndValidateState(userState);
     }
     
     let response;
-    // ... (The switch statement remains the same)
     switch (endpoint) {
         case 'state': response = new Response(JSON.stringify(userState), { headers: { 'Content-Type': 'application/json' } }); break;
         case 'chat': response = await handleChat(request, env, userId, userState); break;
@@ -85,7 +82,7 @@ async function handleApiRequest(endpoint, context) {
     return response;
 }
 
-// --- API 处理函数 (with fixes) ---
+// --- API 处理函数 ---
 async function handleChat(request, env, userId, userState) {
     const apiKey = userState.apiKey || env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -224,4 +221,4 @@ async function getUserIdFromCookie(request) {
         responseHeaders['Set-Cookie'] = `userID=${userId}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`;
     }
     return { userId, responseHeaders };
-}
+                    }

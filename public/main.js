@@ -2,7 +2,7 @@ const ui = {};
 let appState = {};
 let isLoading = false;
 let imageData = null;
-const UNLIMITED_SENTINEL = -1; // Make frontend aware of the new standard
+const UNLIMITED_SENTINEL = -1; 
 
 // --- 全局API请求函数 ---
 async function apiRequest(endpoint, options = {}) {
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         textInput: document.getElementById('text-input'), sendBtn: document.getElementById('send-btn'),
         settingsBtn: document.getElementById('settings-btn'), closeSettingsBtn: document.getElementById('close-settings-btn'),
         settingsOverlay: document.getElementById('settings-overlay'), modelSelect: document.getElementById('model-select'),
-        themeToggle: document.getElementById('theme-toggle'), webSearchToggle: document.getElementById('web-search-toggle'),
+        themeToggle: document.getElementById('theme-toggle'),
         usageCount: document.getElementById('usage-count'), uploadBtn: document.getElementById('upload-btn'),
         imageInput: document.getElementById('image-input'), imagePreviewContainer: document.getElementById('image-preview-container'),
         previewImg: document.getElementById('image-preview'), removeImgBtn: document.getElementById('remove-img-btn'),
@@ -46,7 +46,7 @@ async function loadInitialState() {
     try {
         const state = await apiRequest('state');
         if (state.repaired) {
-            alert("检测到您的账户数据存在异常，已为您重置。如有兑换码，请重新兑换。");
+            alert("检测到您的账户数据存在异常，已为您重置使用次数。如有兑换码，请重新兑换。");
         }
         updateAppState(state);
     } catch (error) {
@@ -71,17 +71,9 @@ function updateAppState(newState) {
 
 function adjustHeight() { document.querySelector('.app-container').style.height = window.innerHeight + 'px'; }
 
-// FIX: Added auto-growing textarea logic
-function autoGrowTextarea() {
-    const textarea = ui.textInput;
-    textarea.style.height = 'auto'; // Reset height to recalculate
-    textarea.style.height = (textarea.scrollHeight) + 'px';
-}
-
 function setupEventListeners() {
     ui.sendBtn.addEventListener('click', sendMessage);
     ui.textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
-    ui.textInput.addEventListener('input', autoGrowTextarea);
     ui.addConversationBtn.addEventListener('click', () => createNewConversation(true));
     ui.settingsBtn.addEventListener('click', () => ui.settingsOverlay.style.display = 'flex');
     ui.closeSettingsBtn.addEventListener('click', () => {
@@ -220,9 +212,9 @@ function renderConversationList() {
         const itemEl = document.createElement('div');
         itemEl.className = 'conversation-item';
         if (conv.id === appState.activeConversationId) itemEl.classList.add('active');
-        itemEl.innerHTML = `<span class="title">${conv.title}</span><div><button class="icon-btn" title="重命名"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="icon-btn" title="删除对话"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div>`;
-        itemEl.querySelector('button[title="重命名"]').onclick = (event) => renameConversation(conv.id, event);
-        itemEl.querySelector('button[title="删除对话"]').onclick = (event) => deleteConversation(conv.id, event);
+        itemEl.innerHTML = `<span class="title">${conv.title}</span><div><button class="icon-btn" title="重命名"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="icon-btn delete-btn" title="删除对话"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div>`;
+        itemEl.querySelector('.icon-btn[title="重命名"]').onclick = (event) => renameConversation(conv.id, event);
+        itemEl.querySelector('.icon-btn.delete-btn').onclick = (event) => deleteConversation(conv.id, event);
         itemEl.onclick = () => setActiveConversation(conv.id);
         listEl.appendChild(itemEl);
     });
@@ -274,6 +266,12 @@ async function sendMessage() {
     const text = ui.textInput.value.trim();
     if (!text && !imageData) return;
 
+    // --- 新增：检查模型是否支持图片 ---
+    if (imageData && appState.model === 'gemini-pro') {
+        alert('您选择的 Gemini 1.0 Pro 模型不支持图片分析，请在设置中切换到其他支持图片的模型 (如 2.5 或 1.5 版本) 后再试。');
+        return; // 中断发送
+    }
+
     isLoading = true; ui.sendBtn.disabled = true;
     
     const userParts = [];
@@ -286,9 +284,7 @@ async function sendMessage() {
     const currentConversation = appState.conversations[appState.activeConversationId];
     const historyToSend = [...currentConversation.history, userMessage];
 
-    ui.textInput.value = ''; 
-    autoGrowTextarea(); // Reset textarea height after sending
-    removeImage();
+    ui.textInput.value = ''; removeImage();
     const thinkingDiv = document.createElement('div');
     thinkingDiv.className = 'message bot';
     thinkingDiv.innerHTML = `<div class="avatar">G</div><div class="content">思考中...</div>`;
@@ -296,12 +292,9 @@ async function sendMessage() {
     ui.chatContainer.scrollTop = ui.chatContainer.scrollHeight;
     
     try {
-        const modelToUse = imageData ? 'gemini-1.5-flash-latest' : appState.model;
-        const tools = ui.webSearchToggle.checked ? [{ "google_search_retrieval": {} }] : [];
-        
         const responseData = await apiRequest('chat', {
             method: 'POST',
-            body: JSON.stringify({ contents: historyToSend, model: modelToUse, tools: tools })
+            body: JSON.stringify({ contents: historyToSend, model: appState.model, tools: [] }) // 使用用户选择的模型, tools为空
         });
         
         thinkingDiv.remove();

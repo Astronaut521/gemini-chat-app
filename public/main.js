@@ -18,6 +18,8 @@ async function apiRequest(endpoint, options = {}) {
 // --- 初始化与状态管理 ---
 document.addEventListener('DOMContentLoaded', async () => {
     Object.assign(ui, {
+        // --- 修改点: 获取加载页面元素 ---
+        splashScreen: document.getElementById('splash-screen'),
         appContainer: document.querySelector('.app-container'), body: document.body, chatContainer: document.getElementById('chat-container'),
         textInput: document.getElementById('text-input'), sendBtn: document.getElementById('send-btn'),
         settingsBtn: document.getElementById('settings-btn'), closeSettingsBtn: document.getElementById('close-settings-btn'),
@@ -42,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.addEventListener('resize', adjustHeight);
 });
 
+// --- 修改点: 添加隐藏加载页面的逻辑 ---
 async function loadInitialState() {
     try {
         const state = await apiRequest('state');
@@ -52,6 +55,11 @@ async function loadInitialState() {
     } catch (error) {
         console.error("无法从服务器加载状态:", error);
         alert(`初始化失败: ${error.message}`);
+    } finally {
+        // 无论成功失败，都隐藏加载页面
+        if (ui.splashScreen) {
+            ui.splashScreen.classList.add('hidden');
+        }
     }
 }
 
@@ -266,10 +274,9 @@ async function sendMessage() {
     const text = ui.textInput.value.trim();
     if (!text && !imageData) return;
 
-    // --- 新增：检查模型是否支持图片 ---
     if (imageData && appState.model === 'gemini-pro') {
         alert('您选择的 Gemini 1.0 Pro 模型不支持图片分析，请在设置中切换到其他支持图片的模型 (如 2.5 或 1.5 版本) 后再试。');
-        return; // 中断发送
+        return; 
     }
 
     isLoading = true; ui.sendBtn.disabled = true;
@@ -294,7 +301,7 @@ async function sendMessage() {
     try {
         const responseData = await apiRequest('chat', {
             method: 'POST',
-            body: JSON.stringify({ contents: historyToSend, model: appState.model, tools: [] }) // 使用用户选择的模型, tools为空
+            body: JSON.stringify({ contents: historyToSend, model: appState.model, tools: [] })
         });
         
         thinkingDiv.remove();

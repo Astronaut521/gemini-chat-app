@@ -71,6 +71,7 @@ function updateAppState(newState) {
     }
 }
 
+// 核心修复: 确保此函数被正确调用
 function updateThemeLabel() {
     if (ui.themeLabel) {
         ui.themeLabel.textContent = ui.body.dataset.theme === 'dark' ? '浅色模式' : '深色模式';
@@ -249,11 +250,11 @@ function removeImage() {
 
 function addMessage(role, parts, shouldScroll = true) {
     const messageDiv = document.createElement('div');
-    // 核心修复: 确保添加的类名 (user, model) 与 CSS (.user, .model) 严格对应
-    messageDiv.className = `message ${role}`; 
+    messageDiv.className = `message ${role}`;
     let contentHTML = '';
-    
-    const imagePart = parts.find(p => p.inline_data && p.inline_data.data);
+
+    // 核心修复: 确保正确查找和渲染图片
+    const imagePart = parts.find(p => p.inline_data);
     if (imagePart) {
         contentHTML += `<img src="data:${imagePart.inline_data.mime_type};base64,${imagePart.inline_data.data}" style="max-width:100%; border-radius: 8px; margin-bottom: 0.5rem;" alt="image">`;
     }
@@ -302,8 +303,7 @@ async function sendMessage() {
 
     ui.textInput.value = ''; removeImage();
     const thinkingDiv = document.createElement('div');
-    // 核心修复: “思考中”使用 .bot 类，与CSS对应
-    thinkingDiv.className = 'message bot'; 
+    thinkingDiv.className = 'message bot';
     thinkingDiv.innerHTML = `<div class="avatar">G</div><div class="content">思考中...</div>`;
     ui.chatContainer.appendChild(thinkingDiv);
     ui.chatContainer.scrollTop = ui.chatContainer.scrollHeight;
@@ -372,4 +372,4 @@ function importData(event) {
 }
 
 marked.setOptions({ gfm: true, breaks: true });
-if (typeof hljs !== 'undefined') { hljs.configure({ ignoreUnescapedHTML: true }); }```
+if (typeof hljs !== 'undefined') { hljs.configure({ ignoreUnescapedHTML: true }); }

@@ -4,19 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Gemini 聊天</title>
-    
-    <!-- --- 修改点: 替换为从原图提取路径并优化的高保真矢量图标 --- -->
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 60'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0.5' x2='1' y2='0.5'%3E%3Cstop offset='0' stop-color='%234285F4'/%3E%3Cstop offset='0.5' stop-color='%239B72CB'/%3E%3Cstop offset='1' stop-color='%23D96570'/%3E%3C/linearGradient%3E%3ClinearGradient id='s' x1='0.5' y1='0' x2='0.5' y2='1'%3E%3Cstop offset='0' stop-color='%23896CF8'/%3E%3Cstop offset='1' stop-color='%23B866FA'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='url(%23g)'%3E%3Cpath d='M41.7,46.2c-5.2,0-9.8-1.7-13.6-5.2s-5.8-7.9-5.8-13.2c0-5.3,1.9-9.8,5.8-13.3s8.5-5.2,13.6-5.2c6,0,10.9,2.2,14.6,6.5l-6.2,5.5c-2.4-2.8-5.2-4.1-8.4-4.1c-3.8,0-6.8,1.3-9.1,4s-3.5,6-3.5,10.1c0,4.1,1.2,7.4,3.5,10s5.3,3.9,9.1,3.9c3.2,0,6-1.4,8.8-4.2l6.1,5.5C52.4,44.1,47.6,46.2,41.7,46.2z'/%3E%3Cpath d='M74.9,45.3V9.7h8.8v6.8h0.4c2-5,5.6-7.5,10.8-7.5c2.3,0,4.4,0.4,6.3,1.3l-2.6,8.2c-1.3-0.5-2.8-0.8-4.3-0.8c-3.6,0-6.4,1.3-8.5,3.9c-2.1,2.5-3.1,6-3.1,10.2v14.1H74.9z'/%3E%3Cpath d='M120.3,36.5c-2.3,2.4-5.3,3.6-9,3.6c-3.6,0-6.6-1.2-9-3.6c-2.4-2.4-3.6-5.4-3.6-9c0-3.6,1.2-6.6,3.6-9s5.4-3.6,9-3.6c3.6,0,6.6,1.2,9,3.6s3.6,5.4,3.6,9C123.9,31.1,122.7,34.1,120.3,36.5z M115.1,32.3c1.4-1.4,2-3.2,2-5.3c0-2.1-0.7-3.9-2-5.3c-1.4-1.4-3.1-2-5.1-2c-2,0-3.7,0.7-5.1,2c-1.4,1.4-2,3.2-2,5.3c0,2.1,0.7,3.9,2,5.3c1.4,1.4,3.1,2,5.1,2C112,34.3,113.8,33.7,115.1,32.3z'/%3E%3Cpath d='M133.1,45.3V9.7h8.8v27.2c0,3.6,1.1,5.4,3.3,5.4c2.2,0,3.3-1.8,3.3-5.4V9.7h8.8v26.5c0,5.9-2,9.7-5.9,11.5c-3.9,1.7-8.3,1.1-12.4-1.8h-0.4V45.3H133.1z'/%3E%3Cpath d='M160.7,45.3V0h8.8v45.3H160.7z'/%3E%3Cpath d='M183.3,36.5c-2.3,2.4-5.3,3.6-9,3.6c-3.6,0-6.6-1.2-9-3.6c-2.4-2.4-3.6-5.4-3.6-9s1.2-6.6,3.6-9s5.4-3.6,9-3.6c3.6,0,6.6,1.2,9,3.6s3.6,5.4,3.6,9C186.9,31.1,185.7,34.1,183.3,36.5z M178.1,32.3c1.4-1.4,2-3.2,2-5.3c0-2.1-0.7-3.9-2-5.3c-1.4-1.4-3.1-2-5.1-2c-2,0-3.7,0.7-5.1,2c-1.4,1.4-2,3.2-2,5.3c0,2.1,0.7,3.9,2,5.3c1.4,1.4,3.1,2,5.1,2C175,34.3,176.7,33.7,178.1,32.3z'/%3E%3C/g%3E%3Cg fill='url(%23s)'%3E%3Cpath d='M215.1,1.3l-5.6,13.6l-14.8,7.2l14.8,7.2l5.6,13.6l5.6-13.6l14.8-7.2l-14.8-7.2L215.1,1.3z'/%3E%3Cellipse cx='230.3' cy='12.5' rx='3.8' ry='3.9'/%3E%3C/g%3E%3C/svg%3E">
-
+    <!-- 需求 3: 替换为新的 Gemini 风格矢量图标 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%231a73e8' d='M50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z'/></svg>">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/tokyo-night-dark.min.css">
     <style>
         :root {
+            /* 需求 2: 调整浅色和深色模式下AI聊天框的背景色以匹配要求 */
             --bg-light: #f4f6f8; --text-light: #202124; --chat-bg-light: #ffffff;
             --border-light: #e8e8e8; --accent-bg-light: #ffffff; --bg-dark: #1c1c1e;
             --text-dark: #e8eaed; --chat-bg-dark: #2a2a2e; --border-dark: #3c4043;
-            --accent-bg-dark: #2f2f33; --accent: #1a73e8; --white: #ffffff; --gray: #8e8e93;
+            --accent-bg-dark: #2a2a2e; --accent: #1a73e8; --white: #ffffff; --gray: #8e8e93;
             --grad-accent: linear-gradient(135deg, #1a73e8 0%, #4285F4 40%, #9b72cb 75%, #d96570 90%, #f2a640 100%);
             --danger: #d93025;
         }
@@ -25,29 +24,6 @@
         *, *::before, *::after { box-sizing: border-box; }
         html { height: -webkit-fill-available; }
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; overflow: hidden; }
-        
-        #splash-screen {
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-color: var(--bg-light);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 9999;
-            opacity: 1;
-            transition: opacity 0.5s ease-out;
-            -webkit-user-select: none; user-select: none;
-        }
-        #splash-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        #splash-screen .logo-container {
-             width: 60vw;
-             max-width: 280px;
-        }
-        [data-theme="dark"] #splash-screen {
-             background-color: var(--bg-dark);
-        }
-
         .app-container { display: flex; height: 100%; position: relative; }
         #sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: var(--chat-bg); border-right: 1px solid var(--border); transition: left 0.3s ease-in-out; z-index: 1002; display: flex; flex-direction: column; }
         #sidebar.open { left: 0; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
@@ -83,7 +59,7 @@
         .deluxe-btn { background: var(--grad-accent); color: var(--white); border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease-out; flex-shrink: 0; }
         .deluxe-btn:hover { transform: scale(1.1); }
         .deluxe-btn svg { width: 20px; height: 20px; }
-        
+        /* 需求 1: 移除对按钮图标的 transform 微调以实现更好的对齐 */
         .text-btn { background: var(--accent-bg); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 500; }
         .icon-btn { background: none; border: none; color: var(--text); cursor: pointer; opacity: 0.7; padding: 0.5rem; }
         .icon-btn.delete-btn { color: var(--danger); opacity: 0.6; }
@@ -100,14 +76,6 @@
     </style>
 </head>
 <body>
-
-<!-- --- 修改点: 使用高保真矢量图作为启动Logo --- -->
-<div id="splash-screen">
-    <div class="logo-container">
-        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 60'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0.5' x2='1' y2='0.5'%3E%3Cstop offset='0' stop-color='%234285F4'/%3E%3Cstop offset='0.5' stop-color='%239B72CB'/%3E%3Cstop offset='1' stop-color='%23D96570'/%3E%3C/linearGradient%3E%3ClinearGradient id='s' x1='0.5' y1='0' x2='0.5' y2='1'%3E%3Cstop offset='0' stop-color='%23896CF8'/%3E%3Cstop offset='1' stop-color='%23B866FA'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='url(%23g)'%3E%3Cpath d='M41.7,46.2c-5.2,0-9.8-1.7-13.6-5.2s-5.8-7.9-5.8-13.2c0-5.3,1.9-9.8,5.8-13.3s8.5-5.2,13.6-5.2c6,0,10.9,2.2,14.6,6.5l-6.2,5.5c-2.4-2.8-5.2-4.1-8.4-4.1c-3.8,0-6.8,1.3-9.1,4s-3.5,6-3.5,10.1c0,4.1,1.2,7.4,3.5,10s5.3,3.9,9.1,3.9c3.2,0,6-1.4,8.8-4.2l6.1,5.5C52.4,44.1,47.6,46.2,41.7,46.2z'/%3E%3Cpath d='M74.9,45.3V9.7h8.8v6.8h0.4c2-5,5.6-7.5,10.8-7.5c2.3,0,4.4,0.4,6.3,1.3l-2.6,8.2c-1.3-0.5-2.8-0.8-4.3-0.8c-3.6,0-6.4,1.3-8.5,3.9c-2.1,2.5-3.1,6-3.1,10.2v14.1H74.9z'/%3E%3Cpath d='M120.3,36.5c-2.3,2.4-5.3,3.6-9,3.6c-3.6,0-6.6-1.2-9-3.6c-2.4-2.4-3.6-5.4-3.6-9c0-3.6,1.2-6.6,3.6-9s5.4-3.6,9-3.6c3.6,0,6.6,1.2,9,3.6s3.6,5.4,3.6,9C123.9,31.1,122.7,34.1,120.3,36.5z M115.1,32.3c1.4-1.4,2-3.2,2-5.3c0-2.1-0.7-3.9-2-5.3c-1.4-1.4-3.1-2-5.1-2c-2,0-3.7,0.7-5.1,2c-1.4,1.4-2,3.2-2,5.3c0,2.1,0.7,3.9,2,5.3c1.4,1.4,3.1,2,5.1,2C112,34.3,113.8,33.7,115.1,32.3z'/%3E%3Cpath d='M133.1,45.3V9.7h8.8v27.2c0,3.6,1.1,5.4,3.3,5.4c2.2,0,3.3-1.8,3.3-5.4V9.7h8.8v26.5c0,5.9-2,9.7-5.9,11.5c-3.9,1.7-8.3,1.1-12.4-1.8h-0.4V45.3H133.1z'/%3E%3Cpath d='M160.7,45.3V0h8.8v45.3H160.7z'/%3E%3Cpath d='M183.3,36.5c-2.3,2.4-5.3,3.6-9,3.6c-3.6,0-6.6-1.2-9-3.6c-2.4-2.4-3.6-5.4-3.6-9s1.2-6.6,3.6-9s5.4-3.6,9-3.6c3.6,0,6.6,1.2,9,3.6s3.6,5.4,3.6,9C186.9,31.1,185.7,34.1,183.3,36.5z M178.1,32.3c1.4-1.4,2-3.2,2-5.3c0-2.1-0.7-3.9-2-5.3c-1.4-1.4-3.1-2-5.1-2c-2,0-3.7,0.7-5.1,2c-1.4,1.4-2,3.2-2,5.3c0,2.1,0.7,3.9,2,5.3c1.4,1.4,3.1,2,5.1,2C175,34.3,176.7,33.7,178.1,32.3z'/%3E%3C/g%3E%3Cg fill='url(%23s)'%3E%3Cpath d='M215.1,1.3l-5.6,13.6l-14.8,7.2l14.8,7.2l5.6,13.6l5.6-13.6l14.8-7.2l-14.8-7.2L215.1,1.3z'/%3E%3Cellipse cx='230.3' cy='12.5' rx='3.8' ry='3.9'/%3E%3C/g%3E%3C/svg%3E" alt="Logo">
-    </div>
-</div>
-
 <div class="app-container">
     <div id="sidebar">
         <div class="sidebar-header">
@@ -134,14 +102,7 @@
             <div class="input-area">
                 <button class="deluxe-btn" id="upload-btn" title="上传图片"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></button>
                 <textarea id="text-input" placeholder="输入消息..." rows="1"></textarea>
-                <button class="deluxe-btn" id="send-btn" title="发送">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <g transform="translate(-1, 1)">
-                            <path d="m22 2-7 20-4-9-9-4Z"/>
-                            <path d="M22 2 11 13"/>
-                        </g>
-                    </svg>
-                </button>
+                <button class="deluxe-btn" id="send-btn" title="发送"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button>
                 <input type="file" id="image-input" accept="image/*" style="display: none;">
             </div>
         </div>
@@ -173,7 +134,8 @@
                 </select>
             </div>
             <div class="modal-section" style="display: flex; justify-content: space-between; align-items: center;">
-                <label>暗色模式</label>
+                <!-- 需求 5: 更改标签文本并添加 ID -->
+                <label for="theme-toggle" id="theme-label">深色模式</label>
                 <button class="text-btn" id="theme-toggle">切换</button>
             </div>
             <div class="modal-section">

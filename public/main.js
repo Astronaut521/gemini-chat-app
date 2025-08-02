@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         settingsBtn: document.getElementById('settings-btn'), closeSettingsBtn: document.getElementById('close-settings-btn'),
         settingsOverlay: document.getElementById('settings-overlay'), modelSelect: document.getElementById('model-select'),
         themeToggle: document.getElementById('theme-toggle'),
-        // 需求 5: 添加 themeLabel UI 元素
         themeLabel: document.getElementById('theme-label'),
         usageCount: document.getElementById('usage-count'), uploadBtn: document.getElementById('upload-btn'),
         imageInput: document.getElementById('image-input'), imagePreviewContainer: document.getElementById('image-preview-container'),
@@ -63,7 +62,6 @@ function updateAppState(newState) {
         createNewConversation(false);
     } else {
         ui.body.dataset.theme = appState.theme;
-        // 需求 5: 调用函数以根据初始主题更新标签文本
         updateThemeLabel();
         ui.modelSelect.value = appState.model;
         ui.apiKeyInput.value = appState.apiKey || '';
@@ -73,11 +71,11 @@ function updateAppState(newState) {
     }
 }
 
-// 需求 5: 新增函数用于更新主题切换按钮的标签
 function updateThemeLabel() {
-    ui.themeLabel.textContent = ui.body.dataset.theme === 'dark' ? '浅色模式' : '深色模式';
+    if (ui.themeLabel) {
+        ui.themeLabel.textContent = ui.body.dataset.theme === 'dark' ? '浅色模式' : '深色模式';
+    }
 }
-
 
 function adjustHeight() { document.querySelector('.app-container').style.height = window.innerHeight + 'px'; }
 
@@ -126,7 +124,6 @@ async function saveSettings() {
 
 async function toggleTheme() {
     ui.body.dataset.theme = ui.body.dataset.theme === 'dark' ? 'light' : 'dark';
-    // 需求 5: 切换主题后立即更新标签文本
     updateThemeLabel();
     await saveSettings();
 }
@@ -252,10 +249,10 @@ function removeImage() {
 
 function addMessage(role, parts, shouldScroll = true) {
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${role}`;
+    // 核心修复: 确保添加的类名 (user, model) 与 CSS (.user, .model) 严格对应
+    messageDiv.className = `message ${role}`; 
     let contentHTML = '';
     
-    // 需求 4: 修复图片渲染逻辑
     const imagePart = parts.find(p => p.inline_data && p.inline_data.data);
     if (imagePart) {
         contentHTML += `<img src="data:${imagePart.inline_data.mime_type};base64,${imagePart.inline_data.data}" style="max-width:100%; border-radius: 8px; margin-bottom: 0.5rem;" alt="image">`;
@@ -305,7 +302,8 @@ async function sendMessage() {
 
     ui.textInput.value = ''; removeImage();
     const thinkingDiv = document.createElement('div');
-    thinkingDiv.className = 'message bot';
+    // 核心修复: “思考中”使用 .bot 类，与CSS对应
+    thinkingDiv.className = 'message bot'; 
     thinkingDiv.innerHTML = `<div class="avatar">G</div><div class="content">思考中...</div>`;
     ui.chatContainer.appendChild(thinkingDiv);
     ui.chatContainer.scrollTop = ui.chatContainer.scrollHeight;
@@ -374,4 +372,4 @@ function importData(event) {
 }
 
 marked.setOptions({ gfm: true, breaks: true });
-if (typeof hljs !== 'undefined') { hljs.configure({ ignoreUnescapedHTML: true }); }
+if (typeof hljs !== 'undefined') { hljs.configure({ ignoreUnescapedHTML: true }); }```

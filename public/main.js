@@ -18,12 +18,13 @@ async function apiRequest(endpoint, options = {}) {
 // --- 初始化与状态管理 ---
 document.addEventListener('DOMContentLoaded', async () => {
     Object.assign(ui, {
-        splashScreen: document.getElementById('splash-screen'),
         appContainer: document.querySelector('.app-container'), body: document.body, chatContainer: document.getElementById('chat-container'),
         textInput: document.getElementById('text-input'), sendBtn: document.getElementById('send-btn'),
         settingsBtn: document.getElementById('settings-btn'), closeSettingsBtn: document.getElementById('close-settings-btn'),
         settingsOverlay: document.getElementById('settings-overlay'), modelSelect: document.getElementById('model-select'),
         themeToggle: document.getElementById('theme-toggle'),
+        // 需求 5: 添加 themeLabel UI 元素
+        themeLabel: document.getElementById('theme-label'),
         usageCount: document.getElementById('usage-count'), uploadBtn: document.getElementById('upload-btn'),
         imageInput: document.getElementById('image-input'), imagePreviewContainer: document.getElementById('image-preview-container'),
         previewImg: document.getElementById('image-preview'), removeImgBtn: document.getElementById('remove-img-btn'),
@@ -53,10 +54,6 @@ async function loadInitialState() {
     } catch (error) {
         console.error("无法从服务器加载状态:", error);
         alert(`初始化失败: ${error.message}`);
-    } finally {
-        if (ui.splashScreen) {
-            ui.splashScreen.classList.add('hidden');
-        }
     }
 }
 
@@ -66,6 +63,8 @@ function updateAppState(newState) {
         createNewConversation(false);
     } else {
         ui.body.dataset.theme = appState.theme;
+        // 需求 5: 调用函数以根据初始主题更新标签文本
+        updateThemeLabel();
         ui.modelSelect.value = appState.model;
         ui.apiKeyInput.value = appState.apiKey || '';
         updateUsageDisplay();
@@ -73,6 +72,12 @@ function updateAppState(newState) {
         renderConversationList();
     }
 }
+
+// 需求 5: 新增函数用于更新主题切换按钮的标签
+function updateThemeLabel() {
+    ui.themeLabel.textContent = ui.body.dataset.theme === 'dark' ? '浅色模式' : '深色模式';
+}
+
 
 function adjustHeight() { document.querySelector('.app-container').style.height = window.innerHeight + 'px'; }
 
@@ -121,6 +126,8 @@ async function saveSettings() {
 
 async function toggleTheme() {
     ui.body.dataset.theme = ui.body.dataset.theme === 'dark' ? 'light' : 'dark';
+    // 需求 5: 切换主题后立即更新标签文本
+    updateThemeLabel();
     await saveSettings();
 }
 
@@ -247,10 +254,17 @@ function addMessage(role, parts, shouldScroll = true) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}`;
     let contentHTML = '';
+    
+    // 需求 4: 修复图片渲染逻辑
+    const imagePart = parts.find(p => p.inline_data && p.inline_data.data);
+    if (imagePart) {
+        contentHTML += `<img src="data:${imagePart.inline_data.mime_type};base64,${imagePart.inline_data.data}" style="max-width:100%; border-radius: 8px; margin-bottom: 0.5rem;" alt="image">`;
+    }
     const textPart = parts.find(p => p.text);
-    if (textPart) contentHTML = marked.parse(textPart.text);
-    const imagePart = parts.find(p => p.inline_data);
-    if (imagePart) contentHTML += `<img src="data:${imagePart.mime_type};base64,${imagePart.data}" style="max-width:100%; border-radius: 8px;" alt="image">`;
+    if (textPart) {
+        contentHTML += marked.parse(textPart.text);
+    }
+
     messageDiv.innerHTML = `<div class="avatar">${role === 'user' ? '你' : 'G'}</div><div class="content">${contentHTML}</div>`;
     ui.chatContainer.appendChild(messageDiv);
     if(shouldScroll) ui.chatContainer.scrollTop = ui.chatContainer.scrollHeight;
@@ -265,6 +279,7 @@ function addMessage(role, parts, shouldScroll = true) {
         if (typeof hljs !== 'undefined' && hljs.highlightElement) { messageDiv.querySelectorAll('pre code').forEach(hljs.highlightElement); }
     }
 }
+
 
 async function sendMessage() {
     if (isLoading) return;
@@ -352,7 +367,6 @@ function importData(event) {
                 location.reload();
             }
         } catch (error) {
-            // --- 错误修复：移除了之前错误的语法 ---
             alert(`导入失败：${error.message}`);
         }
     };

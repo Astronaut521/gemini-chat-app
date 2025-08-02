@@ -221,4 +221,4 @@ async function getUserIdFromCookie(request) {
         responseHeaders['Set-Cookie'] = `userID=${userId}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`;
     }
     return { userId, responseHeaders };
-            }
+                                                                   }

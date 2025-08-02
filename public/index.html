@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Gemini 聊天</title>
-    <!-- 核心修复: 替换为几何精确且带有多色官方品牌渐变的全新SVG图标 -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%' y1='100%' x2='100%' y2='0%'><stop offset='0%' stop-color='%2389B5F7'/><stop offset='50%' stop-color='%23D96570'/><stop offset='100%' stop-color='%23F2A640'/></linearGradient></defs><path fill='url(%23g)' d='M50,0 A50,50 0 0 1 100,50 A50,50 0 0 1 50,100 A50,50 0 0 1 0,50 A50,50 0 0 1 50,0 Z'/></svg>">
+    <!-- 核心修复 1: 替换为全新的、带UI渐变和白色G字的SVG图标 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%' y1='100%' x2='100%' y2='0%'><stop offset='0%' stop-color='%231a73e8'/><stop offset='40%' stop-color='%234285F4'/><stop offset='75%' stop-color='%239b72cb'/><stop offset='90%' stop-color='%23d96570'/><stop offset='100%' stop-color='%23f2a640'/></linearGradient></defs><circle cx='50' cy='50' r='50' fill='url(%23g)'/><path fill='%23FFFFFF' d='M68.4,59.3V50c0-9.9-8-17.9-17.9-17.9S32.6,40.1,32.6,50s8,17.9,17.9,17.9c5.1,0,9.6-2.1,12.8-5.5l-5.7-5.7C55.4,58.3,53,59.3,50.5,59.3c-5.1,0-9.3-4.2-9.3-9.3s4.2-9.3,9.3-9.3c4.2,0,7.8,2.8,8.9,6.5H50.5v7.8H68.4z'/></svg>">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/tokyo-night-dark.min.css">
@@ -58,6 +58,8 @@
         .deluxe-btn { background: var(--grad-accent); color: var(--white); border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease-out; flex-shrink: 0; }
         .deluxe-btn:hover { transform: scale(1.1); }
         .deluxe-btn svg { width: 20px; height: 20px; }
+        /* 核心修复 2: 恢复对发送按钮的特定微调 */
+        #send-btn svg { transform: translate(-1px, 1px); }
         .text-btn { background: var(--accent-bg); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 500; }
         .icon-btn { background: none; border: none; color: var(--text); cursor: pointer; opacity: 0.7; padding: 0.5rem; }
         .icon-btn.delete-btn { color: var(--danger); opacity: 0.6; }
@@ -100,7 +102,8 @@
             <div class="input-area">
                 <button class="deluxe-btn" id="upload-btn" title="上传图片"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></button>
                 <textarea id="text-input" placeholder="输入消息..." rows="1"></textarea>
-                <button class="deluxe-btn" id="send-btn" title="发送"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13 2 9l20-7-9 19z"></path></svg></button>
+                <!-- 核心修复 3: 恢复为原始的、完整的纸飞机SVG图标 -->
+                <button class="deluxe-btn" id="send-btn" title="发送"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button>
                 <input type="file" id="image-input" accept="image/*" style="display: none;">
             </div>
         </div>

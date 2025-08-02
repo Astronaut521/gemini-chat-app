@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Gemini 聊天</title>
-    <!-- 核心修复: 替换为由四段圆弧构成的、更美观的星星图标 -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%231a73e8' d='M50,15 C70,15 85,30 85,50 C85,70 70,85 50,85 C30,85 15,70 15,50 C15,30 30,15 50,15 Z M50,25 C65,25 75,35 75,50 C75,65 65,75 50,75 C35,75 25,65 25,50 C25,35 35,25 50,25 Z'/><path fill-opacity='0.8' fill='%239b72cb' d='M50 20 Q 55 45, 75 50 Q 55 55, 50 80 Q 45 55, 25 50 Q 45 45, 50 20 Z'/></svg>">
+    <!-- 核心修复: 替换为精确复刻官方样式的、由圆弧和渐变构成的星星图标 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0.5' y1='0' x2='0.5' y2='1'><stop offset='0%' stop-color='%23E6EFFF'/><stop offset='100%' stop-color='%234285F4'/></linearGradient></defs><path fill='url(%23g)' d='M50,0 C85,15 95,30 100,50 C95,70 85,85 50,100 C15,85 5,70 0,50 C5,30 15,15 50,0 Z'/></svg>">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/tokyo-night-dark.min.css">
@@ -100,10 +100,10 @@
             <div class="input-area">
                 <button class="deluxe-btn" id="upload-btn" title="上传图片"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></button>
                 <textarea id="text-input" placeholder="输入消息..." rows="1"></textarea>
-                <!-- 核心修复: 在SVG内部使用<g>标签进行微调，以实现完美的视觉居中 -->
                 <button class="deluxe-btn" id="send-btn" title="发送">
+                    <!-- 核心修复: 在SVG内部使用<g>标签对图标进行1个像素的微调，以实现完美的视觉居中 -->
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <g transform="translate(-1, 1)">
+                        <g transform="translate(0, 1)">
                             <path d="m22 2-7 20-4-9-9-4Z"/>
                             <path d="M22 2 11 13"/>
                         </g>
@@ -167,7 +167,8 @@
             </div>
             <div style="text-align:center; font-size:0.8em; color:var(--gray); margin-top: 1rem;">
                 <p style="margin:0;">开发者</p>
-                <p style="margin:0.2rem 0;">太空人 & Gemini Pro</p>
+                <!-- 核心修复: 更新开发者信息中的模型版本 -->
+                <p style="margin:0.2rem 0;">太空人 & Gemini 2.5 Pro</p>
             </div>
         </div>
     </div>

@@ -43,10 +43,10 @@
         .user { align-self: flex-end; align-items: flex-end; }
         .user .content { background: var(--accent); color: var(--white); border-top-right-radius: 4px; }
         .user .avatar { background: #7f8c8d; }
-        /* --- 修改点 1: 将 .bot 选择器改为 .bot, .model 来修复AI回复样式问题 --- */
-        .bot, .model { align-self: flex-start; align-items: flex-start; }
-        .bot .content, .model .content { background: var(--accent-bg); border: 1px solid var(--border); border-top-left-radius: 4px; }
-        .bot pre, .model pre { background-color: #282c34; color: #abb2bf; padding: 1em; border-radius: 8px; overflow-x: auto; position: relative; }
+        /* --- 核心修复: 使用 .model (来自API) 和 .bot (用于“思考中”) --- */
+        .model, .bot { align-self: flex-start; align-items: flex-start; }
+        .model .content, .bot .content { background: var(--accent-bg); border: 1px solid var(--border); border-top-left-radius: 4px; }
+        .model pre, .bot pre { background-color: #282c34; color: #abb2bf; padding: 1em; border-radius: 8px; overflow-x: auto; position: relative; }
         .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: var(--white); border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; opacity: 0; transition: opacity 0.2s; font-size: 0.8em; }
         pre:hover .copy-btn { opacity: 0.7; }
         .input-wrapper { display: flex; flex-direction: column; flex-shrink: 0; background: var(--chat-bg); border-top: 1px solid var(--border); }
@@ -100,7 +100,7 @@
             <div class="input-area">
                 <button class="deluxe-btn" id="upload-btn" title="上传图片"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></button>
                 <textarea id="text-input" placeholder="输入消息..." rows="1"></textarea>
-                <!-- --- 修改点 2: 替换为新的、视觉居中的SVG图标 --- -->
+                <!-- 核心修复: 替换为新的、视觉居中的SVG图标 -->
                 <button class="deluxe-btn" id="send-btn" title="发送"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13 2 9l20-7-9 19z"></path></svg></button>
                 <input type="file" id="image-input" accept="image/*" style="display: none;">
             </div>
@@ -133,7 +133,6 @@
                 </select>
             </div>
             <div class="modal-section" style="display: flex; justify-content: space-between; align-items: center;">
-                 <!-- --- 修改点 3: 确保label有ID以便JS控制 --- -->
                 <label for="theme-toggle" id="theme-label">深色模式</label>
                 <button class="text-btn" id="theme-toggle">切换</button>
             </div>

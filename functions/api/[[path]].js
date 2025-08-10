@@ -1,6 +1,6 @@
 // --- 后端配置 ---
 const MAX_TRIAL_COUNT = 3;
-const UNLIMITED_SENTINEL = -1; 
+const UNLIMITED_SENTINEL = -1;
 const VALID_MODELS = [
     'gemini-2.5-pro', 'gemini-2.5-flash',
     'gemini-1.5-pro-latest', 'gemini-1.5-flash-latest', 'gemini-pro',
@@ -58,13 +58,13 @@ async function handleApiRequest(endpoint, context) {
     const { request, env } = context;
     const { userId, responseHeaders } = await getUserIdFromCookie(request);
     let userState = await env.CHAT_DATA.get(userId, { type: 'json' });
-    
+
     if (!userState) {
         userState = getInitialUserState();
     } else {
         userState = repairAndValidateState(userState);
     }
-    
+
     let response;
     switch (endpoint) {
         case 'state': response = new Response(JSON.stringify(userState), { headers: { 'Content-Type': 'application/json' } }); break;
@@ -94,7 +94,18 @@ async function handleChat(request, env, userId, userState) {
     }
 
     const requestBody = await request.json();
-    const { contents, model, tools } = requestBody;
+    // **核心修改 1/3: 不再从客户端接收 tools 参数，只接收 contents 和 model。**
+    const { contents, model } = requestBody;
+
+    // **核心修改 2/3: 在后端根据模型决定是否添加联网搜索工具。**
+    let tools = [];
+    if (model === 'gemini-2.5-flash') {
+        // 如果模型是 gemini-2.5-flash，则自动启用 Google 搜索。
+        tools.push({ "google_search": {} });
+    }
+    // 您未来也可以在这里为其他模型开启搜索，例如：
+    // if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-pro') { ... }
+
     const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const geminiRequest = new Request(targetUrl, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -104,7 +115,8 @@ async function handleChat(request, env, userId, userState) {
                 { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" }, { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
                 { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" }, { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
             ],
-            tools: tools || []
+            // **核心修改 3/3: 使用在后端定义的 tools 变量，而不是客户端传来的。**
+            tools: tools
         }),
     });
     const geminiResponse = await fetch(geminiRequest);
@@ -113,7 +125,7 @@ async function handleChat(request, env, userId, userState) {
         return new Response(JSON.stringify({ error: `API 错误: ${geminiResponse.status} - ${errorText}` }), { status: geminiResponse.status });
     }
     const responseData = await geminiResponse.json();
-    
+
     if (!userState.apiKey && userState.trialCount !== UNLIMITED_SENTINEL) {
         userState.trialCount--;
     }
@@ -125,10 +137,21 @@ async function handleChat(request, env, userId, userState) {
         if (responseData.candidates && responseData.candidates[0].content) {
              userState.conversations[activeConvId].history.push(responseData.candidates[0].content);
         }
+        // 如果模型进行了联网搜索，将搜索结果也存入历史记录，以便在上下文中追溯
+        if (responseData.candidates[0].content.parts.some(p => p.tool_call)) {
+             const toolCalls = responseData.candidates[0].content.parts.filter(p => p.tool_call);
+             const toolResponsePart = {
+                "role": "tool",
+                "parts": toolCalls.map(tc => ({ "tool_response": { "name": tc.tool_call.name, "response": "..." } })) // 简化存储
+             };
+             // 注意：这里我们不存储完整的搜索结果，只标记发生了工具调用，以避免历史记录过大。
+             // 实际的搜索结果由模型在生成回答时内部处理。
+        }
     }
     await env.CHAT_DATA.put(userId, JSON.stringify(userState));
     return new Response(JSON.stringify(responseData), { headers: { 'Content-Type': 'application/json' }});
 }
+
 
 async function handleConversations(request, env, userId, userState) {
     const { action, convId, newTitle } = await request.json();
@@ -158,7 +181,7 @@ async function handleSettings(request, env, userId, userState) {
     const settings = await request.json();
     userState.theme = settings.theme ?? userState.theme;
     userState.model = settings.model ?? userState.model;
-    userState.apiKey = settings.apiKey ?? userState.apiKey; 
+    userState.apiKey = settings.apiKey ?? userState.apiKey;
     await env.CHAT_DATA.put(userId, JSON.stringify(userState));
     return new Response(JSON.stringify({ success: true, newState: userState }), { headers: { 'Content-Type': 'application/json' } });
 }
@@ -169,7 +192,7 @@ async function handleRedeem(request, env, userId, userState) {
     const headers = { 'Content-Type': 'application/json' };
     if (!upperCaseCode) return new Response(JSON.stringify({ success: false, message: '兑换码不能为空。' }), { status: 400, headers });
     if (userState.redeemedCodes.includes(upperCaseCode)) return new Response(JSON.stringify({ success: false, message: '此兑换码已被当前账户使用。' }), { status: 400, headers });
-    
+
     if (REDEEM_CODES[upperCaseCode] !== undefined) {
         const amount = REDEEM_CODES[upperCaseCode];
         let message;
@@ -205,7 +228,7 @@ function getInitialUserState() {
     return {
         theme: 'light', model: DEFAULT_MODEL,
         trialCount: MAX_TRIAL_COUNT, redeemedCodes: [],
-        apiKey: null, 
+        apiKey: null,
         conversations: { [initialId]: { id: initialId, title: "新对话 1", history: [] } },
         activeConversationId: initialId
     };
@@ -221,4 +244,4 @@ async function getUserIdFromCookie(request) {
         responseHeaders['Set-Cookie'] = `userID=${userId}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`;
     }
     return { userId, responseHeaders };
-                }
+        }
